@@ -73,33 +73,91 @@ except the irreducibility of `H`.
 So: **wasm rather than JS**, because this is compute rather than DOM work, and
 because it is the backend with more momentum.
 
-## 3. The three routes
+## 3. The architecture
 
-### (a) wasm + JSFFI export — recommended
+Decided: **a `wasm32-wasi` reactor module holding the numerics, called from a
+conventional JS/TS SPA.** No Haskell rendering framework. Haskell is a
+high-assurance numerical engine behind a WebAssembly boundary; React/Vue/Svelte
+or plain TS does the UI.
 
-Add one module exporting a pure `String -> String` (or a JSON-shaped
-equivalent) that runs `setupExists` and `Verify.checks` and renders the result.
-GHC's wasm backend supports `foreign export javascript`, so the browser calls
-the Haskell function directly; no CLI round-trip, no argv marshalling.
+Miso and Reflex are therefore out of scope — they solve a problem this project
+does not have. JSFFI still allows calls in both directions if some interop is
+ever wanted, but nothing about the UI has to be Haskell.
 
-* *Pros:* smallest diff, best compute, no framework, no Haskell UI code.
-* *Cons:* JSFFI needs the post-link shim step, so the build is a little more
-  than `ghc -o`.
+### Shape of the build
 
-### (b) wasm + WASI shim — the lazy variant of (a)
+* `-no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=…` produces a reactor
+  module rather than a command module (the default is a one-shot executable with
+  a single entry point, which is the wrong shape).
+* A post-link script parses the wasm and emits a JS module supplying the imports
+  the instance needs; instantiation requires knot-tying, because the JSFFI
+  imports and the wasm exports are mutually dependent.
+* `_initialize` is auto-generated and **must be called exactly once** before any
+  other export — via `wasi.initialize(instance)`.
+* WASI itself comes from a small browser shim; `browser_wasi_shim` is the usual
+  choice. The GHC docs do not endorse one.
 
-Compile the existing `Main` unchanged and run it in the browser under a WASI
-polyfill, passing argv and capturing stdout.
+### Two entry points over one pure core
 
-* *Pros:* essentially zero code change; `crit --demo` runs in a page as-is.
-* *Cons:* a string-in/string-out CLI is an awkward thing to build a UI around,
-  and you inherit `exitFailure` as a control-flow mechanism.
+`Main.hs` stays the native CLI. A new `Web.hs` carries the reactor exports.
+Nothing else changes: `Poly`, `QPoly`, `Bezout`, `Factor`, `Construct` and
+`Verify` are already `IO`-free, so both entry points sit on the same pure core.
+This is the payoff of the existing module split, and it means the web work adds
+a module rather than perturbing the verified path.
 
-### (c) JavaScript backend + Miso
+### The boundary must be decimal strings, not JS numbers
 
-* *Pros:* better DOM interop, easier JS FFI, an all-Haskell typed UI.
-* *Cons:* weaker on compute, needs Emscripten, and adds Miso plus its
-  dependency closure to a project that currently depends on nothing.
+This is the one place where a careless API silently destroys the point of the
+program.
+
+Coefficients here are unbounded. §8.5 already produces
+
+```
+101288722414414331904
+```
+
+which exceeds `Number.MAX_SAFE_INTEGER` (`2^53 - 1 ≈ 9.007e15`) by five orders
+of magnitude. Marshalling coefficients as JavaScript `number` would round them
+*silently* — no exception, no NaN, just a wrong answer from a program whose
+entire purpose is exact arithmetic. And it would corrupt the checks along with
+the output, so the failure would not even be visible in the 22 booleans.
+
+So the boundary is:
+
+* **in** — `f` as a JSON array of decimal strings, low to high;
+* **out** — a JSON object carrying `h, u, v, ρ, M, H, W, g` as decimal strings,
+  plus the 22 named checks as booleans.
+
+`BigInt` is the alternative and is exact, but strings are unambiguous across the
+JSFFI and `BigInt("101…")` is one call on the JS side. Either is fine; `number`
+is not.
+
+Encode the JSON by hand. The output shape is fixed and small (~30 lines), and
+`aeson` would drag a large dependency closure into a cross-compiled build,
+forfeiting the zero-dependency property that makes this port cheap in the first
+place.
+
+### Run it off the main thread, and keep cancellation
+
+`Factor.properFactor` is Kronecker, the one super-polynomial step, and it can
+run away on a high-degree `f`. Two options, not exclusive:
+
+* put the module in a **Web Worker**, so a long factorisation never freezes the
+  page; and/or
+* use an **async JSFFI export**, which returns a `Promise` carrying a
+  `promise.throwTo()` callback — the value passed is wrapped as a `JSException`
+  and raised as an async exception in the Haskell thread.
+
+The second is genuinely attractive here: it gives the UI a cancel button for
+precisely the step that can blow up. `--squarefree` remains the cheap escape
+hatch, and should be exposed as a flag in the request object.
+
+### Keep all arithmetic inside the module
+
+The 22 checks run in wasm, on the exact integers, and JS renders booleans. No
+arithmetic should be reimplemented on the JS side — not for display, not for
+validation. The moment a coefficient is parsed into a `number` for convenience,
+the assurance argument is gone.
 
 ## 4. Toolchain cost
 
