@@ -79,8 +79,7 @@ setupExists strat f = do
 -- Lean's @X_dvd_iff@, and decidable.
 theorem1 :: Strategy -> Poly -> Either String (Poly, Poly)
 theorem1 strat f
-  | deg f < 1      = Left "f must be nonconstant"
-  | isZero f       = Left "f must be nonconstant"
-  | coeff f 0 == 0 = Right (pow xP 2, xP)          -- §6, the degenerate case
-  | otherwise      = do s <- setupExists strat f
-                        return (setG s, setBigH s)
+  | isZero f || deg f < 1 = Left "f must be nonconstant"
+  | coeff f 0 == 0        = Right (pow xP 2, xP)   -- §6, the degenerate case
+  | otherwise             = do s <- setupExists strat f
+                               return (setG s, setBigH s)

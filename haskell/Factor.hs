@@ -27,11 +27,12 @@ data Strategy = Irreducible | SquareFree deriving (Eq, Show)
 chooseFactor :: Strategy -> Poly -> Maybe Poly
 chooseFactor strat f
   | deg s < 1 = Nothing
-  | otherwise = Just (case strat of
-      SquareFree  -> s
-      Irreducible -> irreducibleFactor s)
+  | otherwise = Just h
   where
     s = stripX (squareFreePart f)
+    h = case strat of
+          SquareFree  -> s
+          Irreducible -> irreducibleFactor s
 
 -- | Divide out every factor of @X@, so the result has nonzero constant term.
 -- This is the computational content of the case split in @main_strong@.

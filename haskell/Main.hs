@@ -123,3 +123,5 @@ demo = do
           putStrLn $ "    g = " ++ pretty (setG s)
           putStrLn $ "    all " ++ show (length (checks s)) ++ " checks: "
                   ++ (if allOk (checks s) then "ok" else "FAIL")
+          putStrLn $ "    theorem1 agrees     : "
+                  ++ ok (theorem1 Irreducible f == Right (setG s, setBigH s))
