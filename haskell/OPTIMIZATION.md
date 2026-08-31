@@ -158,8 +158,39 @@ Secondary to everything above, but real, and cheap to fix:
 
 None of these change the asymptotics. §1 and §3 do.
 
+## 5b. FLINT: an oracle, not a dependency
+
+FLINT (Fast Library for Number Theory) is the computational floor under most of
+computer algebra — SageMath, OSCAR, Singular, Macaulay2, Maple and Mathematica
+all use it as a backend. LGPL-3, ~900k lines of C over GMP.
+
+The Hart–Novocin–van Hoeij connection is direct rather than incidental: William
+Hart is FLINT's original author, and the ISSAC 2010 paper *is* a FLINT paper —
+the implementation it benchmarks against NTL and Magma was the FLINT one. It is
+still structured as described: `fmpz_poly_factor()` wraps both algorithms, and
+`_fmpz_poly_factor_zassenhaus()` does small-prime search, Hensel lifting and
+recombination, switching to van Hoeij past a local-factor cutoff — cheap
+exhaustive recombination in the common case, lattice recombination only when it
+would blow up.
+
+There is a Haskell binding, [`Flint2`](https://hackage.haskell.org/package/Flint2),
+so calling it is possible. **It is still the wrong dependency for this project.**
+The wasm plan is cheap precisely because `crit` is `base`-only with no C
+dependency; linking FLINT means cross-compiling FLINT and GMP to wasm and
+marshalling across an FFI boundary, which turns a small job into a project. The
+licence changes the distribution story as well.
+
+The right use is as a **testing oracle**. Run FLINT natively — through `Flint2`,
+or just Sage or Pari on the command line — over a few hundred random `f`, and
+compare its factorisations and reduced resultants against `crit`'s. That tests
+exactly the two steps identified above as weakest, costs almost nothing, and
+adds no dependency to the shipped artifact. Do this *before* replacing anything,
+so the replacement has something to be checked against.
+
 ## 6. Recommended order
 
+0. **Build the FLINT oracle first** (§5b), so every later change is checked
+   against a reference implementation rather than against itself.
 1. **Irreducibility certificate mod `p`** before factoring. Removes the
    exponential step for every realistic input, including the whole of §8 and the
    Corollary 3 application. Small, self-contained, biggest win by far.
@@ -188,4 +219,5 @@ still gives `H ∣ g'` and `H² ∣ f ∘ g`, losing only the irreducibility of 
 * [Char, Geddes, Gonnet, *GCDHEU*](https://www.academia.edu/73430211/GCDHEU_Heuristic_polynomial_GCD_algorithm_based_on_integer_GCD_computation)
 * [Reduced resultants and Bézout cofactors (arXiv:2508.11043)](https://arxiv.org/pdf/2508.11043)
 * [Optimizing the half-gcd algorithm (arXiv:2212.12389)](https://arxiv.org/pdf/2212.12389)
-* [FLINT](https://flintlib.org/links.html) · [NTL vs FLINT benchmarks (Shoup)](https://libntl.org/benchmarks.pdf)
+* [FLINT](https://flintlib.org/) · [`fmpz_poly_factor` docs](https://flintlib.org/doc/fmpz_poly_factor.html) · [NTL vs FLINT benchmarks (Shoup)](https://libntl.org/benchmarks.pdf)
+* [`Flint2` Haskell bindings](https://hackage.haskell.org/package/Flint2)
