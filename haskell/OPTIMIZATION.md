@@ -187,6 +187,50 @@ exactly the two steps identified above as weakest, costs almost nothing, and
 adds no dependency to the shipped artifact. Do this *before* replacing anything,
 so the replacement has something to be checked against.
 
+### FLINT in the browser — assessed, and not recommended
+
+The obvious idea is to reach for a prebuilt wasm FLINT. Assessed, and it does
+not hold together as stated.
+
+`sagemathinc/wasm-flint` is the only such build. It is **not maintained** —
+three commits, no releases, no issues or PRs — and it builds **FLINT 2.7.1**
+(current is 3.x, and 2.7.1 predates the Arb/Antic/Calcium merge) against
+**MPIR**, abandoned since 2017.
+
+More fundamentally, **the two wasm modules cannot link**:
+
+* GHC's backend emits `wasm32-wasi`; `wasm-flint` uses **Emscripten** — a
+  different ABI with a different libc.
+* In a browser they are two independent instances with **separate linear
+  memories**. A pointer in one is meaningless in the other, so there is no
+  C-level call between them, only
+  `Haskell → JSFFI → JS glue → Emscripten heap → back`, serializing every value
+  and doing explicit `malloc`/`free` on the far side.
+* The Hackage `Flint2` package specifically cannot bridge this. It is
+  `foreign import ccall` bindings that statically link `libflint.a` at GHC link
+  time; it has no mechanism to bind a module loaded at runtime. Those are
+  different linkage models, not different configurations.
+
+Two routes that *would* work, if this ever becomes necessary:
+
+1. **The coherent one.** Cross-compile FLINT 3.x and GMP with **wasi-sdk** to
+   `wasm32-wasi` static archives and link them into the GHC module through
+   ordinary C FFI — one module, one memory, no marshalling, and `Flint2`-style
+   bindings behave as designed. A real build project; GMP's configure and
+   assembly are host-specific.
+2. **The cheap one.** Keep two modules and make the boundary *coarse*: one call
+   per factorisation, polynomial in as decimal strings, factors out as decimal
+   strings. Marshalling is then amortised over a whole factorisation rather than
+   paid per bignum operation. Viable, and far less work than (1).
+
+Neither is worth doing yet. FLINT buys exactly one thing here — factoring. It
+does not help the reduced resultant (§2, already minimal) or the construction
+itself (trivial arithmetic on tiny polynomials). And §1's mod-`p` certificate
+makes factoring *not run* on every input this project cares about. Adding an
+unmaintained build of a five-year-old FLINT against a dead bignum library, plus
+a cross-module marshalling layer, to accelerate a path that ~100 lines of
+Haskell would stop executing, is the wrong order of work.
+
 ## 6. Recommended order
 
 0. **Build the FLINT oracle first** (§5b), so every later change is checked
@@ -221,3 +265,4 @@ still gives `H ∣ g'` and `H² ∣ f ∘ g`, losing only the irreducibility of 
 * [Optimizing the half-gcd algorithm (arXiv:2212.12389)](https://arxiv.org/pdf/2212.12389)
 * [FLINT](https://flintlib.org/) · [`fmpz_poly_factor` docs](https://flintlib.org/doc/fmpz_poly_factor.html) · [NTL vs FLINT benchmarks (Shoup)](https://libntl.org/benchmarks.pdf)
 * [`Flint2` Haskell bindings](https://hackage.haskell.org/package/Flint2)
+* [`sagemathinc/wasm-flint`](https://github.com/sagemathinc/wasm-flint) — Emscripten build recipe, unmaintained, FLINT 2.7.1 + MPIR
