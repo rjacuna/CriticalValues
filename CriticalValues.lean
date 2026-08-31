@@ -4,4 +4,6 @@ import CriticalValues.Descent
 import CriticalValues.Irred
 import CriticalValues.Exists
 import CriticalValues.Nondeg
+import CriticalValues.Critical
 import CriticalValues.Main
+import CriticalValues.Ledger
