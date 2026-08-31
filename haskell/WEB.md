@@ -18,7 +18,7 @@ Two backends now live *inside* GHC, both since 9.6:
 | target | origin | state |
 |---|---|---|
 | `javascript-unknown-ghcjs` | GHCJS, absorbed in-tree | tech preview; **not** in the official bindist, needs a cross-compiler build and Emscripten |
-| `wasm32-wasi` | Tweag's work, absorbed in-tree | tech preview; ghcup installs it on Linux, otherwise `ghc-wasm-meta`; Template Haskell and GHCi work since the 9.10 era |
+| `wasm32-wasi` | Tweag's work, absorbed in-tree | tech preview; installed via `ghc-wasm-meta`'s own ghcup channel; Template Haskell and GHCi work since the 9.10 era |
 
 The predecessors are dead ends and should not be started from:
 
@@ -101,20 +101,40 @@ polyfill, passing argv and capturing stdout.
 * *Cons:* weaker on compute, needs Emscripten, and adds Miso plus its
   dependency closure to a project that currently depends on nothing.
 
-## 4. Toolchain cost — the real cost
+## 4. Toolchain cost
 
-The code is the cheap part. The cross-compiler is not in any bindist, and
-ghcup's prebuilt wasm cross-compiler is Linux-oriented; on macOS ARM this
-likely means bootstrapping through `ghc-wasm-meta`, which pulls `wasi-sdk`.
-Budget a long download and some yak-shaving.
+### Host versus target
 
-One local gotcha, already hit once on this machine: `gcc` on `PATH` resolves to
+Worth stating plainly, because it is the source of most confusion here: the
+*output* of these backends is platform-independent — a `.wasm` or a `.js` that
+runs in any browser on any OS. The *compiler* is not. A cross-compiler is a
+native program, so "GHC targeting wasm" means a GHC binary built for
+`aarch64-darwin` that emits wasm, and somebody has to build and publish that
+binary for each host. GHC's wasm backend additionally shells out to `wasi-sdk`,
+a clang/LLVM toolchain, which is likewise a host-native binary.
+
+So the question is never "will it run on the web" — it will. The question is
+only whether a compiler that runs *on this Mac* is a download or a build.
+
+### Where that currently lands
+
+Better than it used to be. `ghc-wasm-meta` maintains its own ghcup channel and
+ships binary artifacts for `{x86_64,aarch64}-{linux,darwin}`, so Apple Silicon
+is covered; a manual build is supported on all four host combinations as a
+fallback. Older write-ups (including, briefly, an earlier draft of this file)
+say there is no prebuilt `wasm32-wasi-ghc` for macOS — that describes a
+previous state and should be re-checked rather than believed.
+
+Budget the `wasi-sdk` download regardless, and expect a multi-megabyte `.wasm`
+before `-Os` and `wasm-opt`.
+
+### A local gotcha
+
+Already hit once on this machine: `gcc` on `PATH` resolves to
 Alire's GNAT toolchain (`~/.local/share/alire/toolchains/gnat_native_*`), whose
 `include-fixed/stdio.h` is broken on Darwin 25 — `#include <stdio.h>` fails with
 `unknown type name 'FILE'`. Any `configure` that probes for a C compiler will
 fail confusingly. Put `/usr/bin` first and set `CC=/usr/bin/clang`.
-
-Also expect a multi-megabyte `.wasm` before `-Os` and `wasm-opt`.
 
 ## 5. What the artifact should be
 
