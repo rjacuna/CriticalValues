@@ -137,20 +137,20 @@ Encode the JSON by hand. The output shape is fixed and small (~30 lines), and
 forfeiting the zero-dependency property that makes this port cheap in the first
 place.
 
-### Run it off the main thread, and keep cancellation
+### Run it off the main thread
 
-`Factor.properFactor` is Kronecker, the one super-polynomial step, and it can
-run away on a high-degree `f`. Two options, not exclusive:
+Put the module in a **Web Worker** and have the UI show a busy indicator while
+it runs. No cancellation channel, no promise plumbing: the page stays
+responsive, and the result arrives when it arrives.
 
-* put the module in a **Web Worker**, so a long factorisation never freezes the
-  page; and/or
-* use an **async JSFFI export**, which returns a `Promise` carrying a
-  `promise.throwTo()` callback — the value passed is wrapped as a `JSException`
-  and raised as an async exception in the Haskell thread.
+This is defensible rather than merely simpler, because of `OPTIMIZATION.md` §1:
+the one super-polynomial step is Kronecker, and it is avoidable. An
+irreducibility certificate mod `p` settles every input this project actually
+cares about — all of §8, and the minimal polynomials that Corollary 3 feeds in —
+without factoring at all. Once that is in, there is no runaway step to cancel.
 
-The second is genuinely attractive here: it gives the UI a cancel button for
-precisely the step that can blow up. `--squarefree` remains the cheap escape
-hatch, and should be exposed as a flag in the request object.
+`--squarefree` remains the escape hatch and should be exposed as a flag in the
+request object.
 
 ### Keep all arithmetic inside the module
 
