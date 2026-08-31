@@ -187,49 +187,74 @@ exactly the two steps identified above as weakest, costs almost nothing, and
 adds no dependency to the shipped artifact. Do this *before* replacing anything,
 so the replacement has something to be checked against.
 
-### FLINT in the browser — assessed, and not recommended
+### FLINT in the browser — viable, via a coarse boundary
 
-The obvious idea is to reach for a prebuilt wasm FLINT. Assessed, and it does
-not hold together as stated.
+The natural idea is to reach for a prebuilt wasm FLINT. It works, provided the
+boundary is drawn in the right place.
 
-`sagemathinc/wasm-flint` is the only such build. It is **not maintained** —
-three commits, no releases, no issues or PRs — and it builds **FLINT 2.7.1**
-(current is 3.x, and 2.7.1 predates the Arb/Antic/Calcium merge) against
-**MPIR**, abandoned since 2017.
+The mechanical facts: `sagemathinc/wasm-flint` builds FLINT with **Emscripten**,
+while GHC emits **`wasm32-wasi`**. Two ABIs, two instances, two linear memories,
+so no shared pointers and no C-level call. The Hackage `Flint2` package cannot
+bridge this either — it is `foreign import ccall` bindings that statically link
+`libflint.a` at GHC link time, with no mechanism to bind a module loaded at
+runtime.
 
-More fundamentally, **the two wasm modules cannot link**:
+**None of that matters at a coarse boundary.** Serialise: polynomial in as
+decimal strings, factors out as decimal strings, one round trip per
+factorisation. The marshalling is amortised over an entire factorisation rather
+than paid per bignum operation, which is to say it is free.
 
-* GHC's backend emits `wasm32-wasi`; `wasm-flint` uses **Emscripten** — a
-  different ABI with a different libc.
-* In a browser they are two independent instances with **separate linear
-  memories**. A pointer in one is meaningless in the other, so there is no
-  C-level call between them, only
-  `Haskell → JSFFI → JS glue → Emscripten heap → back`, serializing every value
-  and doing explicit `malloc`/`free` on the far side.
-* The Hackage `Flint2` package specifically cannot bridge this. It is
-  `foreign import ccall` bindings that statically link `libflint.a` at GHC link
-  time; it has no mechanism to bind a module loaded at runtime. Those are
-  different linkage models, not different configurations.
+#### Draw the boundary so the Haskell stays pure
 
-Two routes that *would* work, if this ever becomes necessary:
+The one trap is *direction*. If Haskell calls out, the JSFFI import is async,
+so `chooseFactor` becomes `IO` — and that propagates through `setupOfFactor`,
+`setupExists` and `theorem1`, all currently pure.
 
-1. **The coherent one.** Cross-compile FLINT 3.x and GMP with **wasi-sdk** to
-   `wasm32-wasi` static archives and link them into the GHC module through
-   ordinary C FFI — one module, one memory, no marshalling, and `Flint2`-style
-   bindings behave as designed. A real build project; GMP's configure and
-   assembly are host-specific.
-2. **The cheap one.** Keep two modules and make the boundary *coarse*: one call
-   per factorisation, polynomial in as decimal strings, factors out as decimal
-   strings. Marshalling is then amortised over a whole factorisation rather than
-   paid per bignum operation. Viable, and far less work than (1).
+Invert it. Let the JS orchestrator factor first and hand Haskell the chosen `h`:
 
-Neither is worth doing yet. FLINT buys exactly one thing here — factoring. It
-does not help the reduced resultant (§2, already minimal) or the construction
-itself (trivial arithmetic on tiny polynomials). And §1's mod-`p` certificate
-makes factoring *not run* on every input this project cares about. Adding an
-unmaintained build of a five-year-old FLINT against a dead bignum library, plus
-a cross-module marshalling layer, to accelerate a path that ~100 lines of
-Haskell would stop executing, is the wrong order of work.
+```
+f  →  wasm-flint (fmpz_poly_factor)  →  pick h  →  setupOfFactor f h  →  g, H, checks
+```
+
+`setupOfFactor :: Poly -> Poly -> Either String Setup` already exists and already
+takes `h` as a parameter — it is the entry point mirroring Lean's
+`setup_of_factor`. The module split built to follow the Lean development turns
+out to be exactly the right delegation seam. Haskell stays pure and synchronous;
+no async JSFFI, no `IO` anywhere in the verified path.
+
+`squareFreePart` can go across the same boundary, which disposes of the
+`Data.Ratio` swell of §3 at no extra cost.
+
+#### Trust, but verify — cheaply
+
+Delegating does not mean trusting. FLINT's factorisation is checkable for
+almost nothing:
+
+* `∏ factors = f` by exact division — cheap, and catches any transport bug;
+* the mod-`p` certificate of §1 applied to the chosen `h`, confirming
+  irreducibility independently.
+
+Note that the 22 checks never rested on the factoriser: they test `deg H = deg h`
+and primitivity of `H`, not irreducibility. Only Lemma D's conclusion depends on
+`h` being irreducible, and the certificate closes exactly that gap.
+
+#### What this changes
+
+If a JS orchestration layer exists anyway, **delegating to wasm-FLINT is less
+work than implementing Berlekamp–Zassenhaus in Haskell**, and yields
+van Hoeij-quality recombination without writing any of it. That supersedes
+step 4 below.
+
+The remaining objection is currency, not architecture: `wasm-flint` is
+unmaintained (three commits, no releases) and pins FLINT 2.7.1 against MPIR,
+abandoned since 2017. But it is a build recipe — fork it, bump to FLINT 3.x and
+GMP, rebuild. A day, not a project.
+
+The alternative for a single-module build, should the two-module split ever
+become inconvenient: cross-compile FLINT 3.x and GMP with **wasi-sdk** to
+`wasm32-wasi` archives and link them into the GHC module by ordinary C FFI —
+one memory, no marshalling, `Flint2` bindings behaving as designed. More work,
+and GMP's configure and assembly are host-specific.
 
 ## 6. Recommended order
 
@@ -242,8 +267,10 @@ Haskell would stop executing, is the wrong order of work.
    computation of the Bézout data. Kills the rational swell.
 3. **Choose `h` minimising `|ρ h₀|`** when `f` is reducible. Pure output-size
    win, cheap once §1 gives a real factorisation.
-4. **Berlekamp–Zassenhaus with Hensel lifting** to replace Kronecker for
-   genuinely reducible input.
+4. **Delegate factoring to wasm-FLINT** across the coarse boundary of §5b, with
+   `∏ factors = f` and the mod-`p` certificate as verification — cheaper than
+   implementing **Berlekamp–Zassenhaus with Hensel lifting** in Haskell, which
+   is the fallback if a single self-contained module is wanted instead.
 5. Haskell micro-fixes from §5.
 6. **van Hoeij** only if adversarial input ever matters. It probably never will
    here.
