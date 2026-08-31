@@ -17,6 +17,7 @@ Neither is quite in Mathlib in the form needed.
 import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.Polynomial.Identities
 import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.Polynomial.Degree.Lemmas
 
 set_option linter.style.header false
 
@@ -58,6 +59,20 @@ theorem coeff_scale (M : ℤ) (p : ℤ[X]) (j : ℕ) :
       rw [scale_apply, monomial_comp, mul_pow, ← C_pow, ← mul_assoc, ← C_mul,
         C_mul_X_pow_eq_monomial, coeff_monomial, coeff_monomial]
       split <;> simp_all
+
+/-- Dilation by a nonzero scalar is injective, since it multiplies the `j`-th
+coefficient by `Mʲ ≠ 0`. -/
+theorem scale_injective {M : ℤ} (hM : M ≠ 0) : Function.Injective (scale M) := by
+  intro p q hpq
+  ext j
+  have h := congrArg (fun r => Polynomial.coeff r j) hpq
+  simp only [coeff_scale] at h
+  exact mul_right_cancel₀ (pow_ne_zero j hM) h
+
+/-- Dilation by a nonzero scalar preserves degree: `X ↦ M·X` has degree `1`. -/
+theorem natDegree_scale {M : ℤ} (hM : M ≠ 0) (p : ℤ[X]) :
+    (scale M p).natDegree = p.natDegree := by
+  rw [scale_apply, natDegree_comp, natDegree_C_mul_X _ hM, mul_one]
 
 @[simp] theorem scale_coeff_zero (M : ℤ) (p : ℤ[X]) :
     (scale M p).coeff 0 = p.coeff 0 := by
