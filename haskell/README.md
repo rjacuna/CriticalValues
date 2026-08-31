@@ -10,6 +10,27 @@ ghc -O2 -o crit Main.hs && ./crit 1 0 1        # f = X^2 + 1
 
 No dependencies beyond `base`.
 
+## Status: the Haskell has not been compiled
+
+There is no GHC on the machine this was written on, and none could be installed:
+sustained download throughput measured ~34 KB/s, and every multi-MB transfer
+(Homebrew's bottle from `ghcr.io`, `downloads.haskell.org`, GitHub releases)
+stalled or died with `PROTOCOL_ERROR`. A GHC install is hours at that rate.
+
+So the split is:
+
+* **The algorithm is verified.** `reference.py` is the same construction, module
+  for module, with the same 22 checks as `Verify.hs`. It runs here. All three
+  test vectors of §8 reproduce the spec's `H`, `W` and `g` *exactly* when fed
+  the spec's own Bézout data, and the pipeline's own choices pass every check on
+  twelve inputs — irreducible, reducible, repeated-factor, and the degenerate
+  `X ∣ f` case.
+* **The Haskell is unverified as Haskell.** It has been read carefully but not
+  type-checked. Expect to fix compile errors before it runs.
+
+Run the mirror with `python3 reference.py --demo`, or
+`python3 reference.py 1 0 1` for `f = X² + 1`.
+
 ## Is the proof constructive?
 
 The content is; the Lean *terms* are not executable. Exactly two steps of the

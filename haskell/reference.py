@@ -1,3 +1,13 @@
+"""Python mirror of the Haskell program, module for module.
+
+Same algorithm, same names, same checks as Verify.hs.  It exists because the
+Haskell is the typed artifact and this is the one that runs anywhere; the two
+were written together and agree on every test vector of spec §8.
+
+    python3 reference.py 1 0 1      # f = X^2 + 1
+    python3 reference.py --demo
+"""
+
 from fractions import Fraction as F
 from math import gcd
 from functools import reduce
@@ -100,98 +110,175 @@ def s(p):
         if c: out.append(f"{c}X^{j}" if j>1 else (f"{c}X" if j==1 else f"{c}"))
     return " + ".join(out)
 
-print("--- spec's own Bezout data reproduces spec's g ---")
-for name,f,h,f1,u,v,rho,expH,expW,expg in [
-  ("8.1 p=3,q=2",[-3,2],[-3,2],[1],[],[1],2,[1,4],[0,2],[0,-12,-24]),
-  ("8.2",[1,0,1],[1,0,1],[1],[2],[0,-1],2,[1,0,4],[0,1],[0,3,0,4]),
-  ("8.3",[-2,0,0,1],[-2,0,0,1],[1],[3],[0,-1],-6,[1,0,0,-864],[0,-2],[0,16,0,0,-3456]),
-]:
-    st=setup(f,h,f1,u,v,rho)
-    print(f"{name}: H={st['H']==expH} W={st['W']==expW} g={st['g']==expg}  checks={all(check(st).values())}")
 
-print("--- program's own Bezout ---")
-for name,f in [("X^2+1",[1,0,1]),("X^3-2",[-2,0,0,1]),("X^3-X-1",[-1,-1,0,1]),
-               ("2X-3",[-3,2]),("X^4+1",[1,0,0,0,1]),
-               ("8.5 X^3-X^2-2X-8",[-8,-2,-1,1])]:
-    u,v,rho=bezout(f)
-    st=setup(f,f,[1],u,v,rho)
-    c=check(st)
-    print(f"{name}: rho={rho} M={st['M']} H={s(st['H'])}")
-    print(f"    g={s(st['g'])}")
-    print(f"    checks: {all(c.values())} {[k for k,x in c.items() if not x]}")
+# ---------------------------------------------------------------- Verify.hs
+CHECKS = [
+ ("hρ    : ρ ≠ 0",                      lambda S: S['rho'] != 0),
+ ("hh₀   : h.coeff 0 = h₀",              lambda S: (S['h'][0] if S['h'] else 0) == S['h0']),
+ ("hh₀0  : h₀ ≠ 0",                     lambda S: S['h0'] != 0),
+ ("hn    : 1 ≤ deg h",                 lambda S: len(S['h'])-1 >= 1),
+ ("hfac  : f = h * f₁",                lambda S: S['f'] == mul(S['h'], S['f1'])),
+ ("hbez  : u*h + v*h' = C ρ",           lambda S: add(mul(S['u'],S['h']), mul(S['v'],deriv(S['h']))) == trim([S['rho']])),
+ ("hM    : M = ρ * h₀",                lambda S: S['M'] == S['rho']*S['h0']),
+ ("hH    : C h₀ * H = h(M·X)",          lambda S: mul([S['h0']], S['H']) == scaleX(S['M'], S['h'])),
+ ("hH0   : H.coeff 0 = 1",             lambda S: S['H'][0] == 1),
+ ("hW    : C ρ * W = C v₀ * H − v(M·X)", lambda S: mul([S['rho']],S['W']) == sub(mul([S['v'][0] if S['v'] else 0],S['H']), scaleX(S['M'],S['v']))),
+ ("hg    : g = M·X + h(M·X)*W",         lambda S: S['g'] == add(mul([S['M']],[0,1]), mul(scaleX(S['M'],S['h']), S['W']))),
+ ("Lemma A : H | ρ·g'",                 lambda S: exact_div(mul([S['rho']],deriv(S['g'])), S['H']) is not None),
+ ("Lemma B : H² | ρ·(f∘g)",             lambda S: exact_div(mul([S['rho']],comp(S['f'],S['g'])), mul(S['H'],S['H'])) is not None),
+ ("Cor C'  : H | g'",                  lambda S: exact_div(deriv(S['g']), S['H']) is not None),
+ ("Cor C'  : H² | f∘g",                 lambda S: exact_div(comp(S['f'],S['g']), mul(S['H'],S['H'])) is not None),
+ ("Lemma E : W ≠ 0",                   lambda S: S['W'] != []),
+ ("Lemma E : 1 ≤ deg W",                lambda S: len(S['W'])-1 >= 1),
+ ("Lemma E : deg g = deg h + deg W",   lambda S: len(S['g'])-1 == (len(S['h'])-1)+(len(S['W'])-1)),
+ ("Lemma E : 2 ≤ deg g",                lambda S: len(S['g'])-1 >= 2),
+ ("Lemma E : g' ≠ 0",                  lambda S: deriv(S['g']) != []),
+ ("Lemma D : deg H = deg h",           lambda S: len(S['H'])-1 == len(S['h'])-1),
+ ("        : H is primitive",          lambda S: content(S['H']) == 1),
+]
 
-# ---- factoring path ----
-def qgcd(p,q):
-    p=[F(c) for c in p]; q=[F(c) for c in q]
-    while qtrim(q):
-        p,q=q,qdivmod(p,q)[1]
-    p=qtrim(p)
+def run_checks(S):
+    return [(n, f(S)) for n, f in CHECKS]
+
+# ---------------------------------------------------------------- Factor.hs
+def qgcd(p, q):
+    p = [F(c) for c in p]; q = [F(c) for c in q]
+    while qtrim(q): p, q = q, qdivmod(p, q)[1]
+    p = qtrim(p)
     return [x/p[-1] for x in p] if p else []
-def clear(q):
-    d=reduce(lambda acc,r: acc*r.denominator//gcd(acc,r.denominator), q, 1)
-    return trim([int(x*d) for x in q])
-def primpart(p):
-    c=content(p)
-    return divC(c,p) if c else p
-def sqfree(f):
-    g=qgcd(f,deriv(f))
-    q,_=qdivmod([F(c) for c in f], g)
-    return primpart(clear(q))
-def stripX(p):
-    while p and p[0]==0: p=exact_div(p,[0,1])
-    return p
-def divisors_pm(n):
-    n=abs(n); return [d*s for d in range(1,n+1) if n%d==0 for s in (1,-1)]
-def interp(pts):
-    n=len(pts); res=[]
-    for i,(xi,yi) in enumerate(pts):
-        num=[F(1)]; den=F(1)
-        for j,(xj,_) in enumerate(pts):
-            if i==j: continue
-            num=qmul(num,[F(-xj),F(1)]); den*= (F(xi)-F(xj))
-        t=[c*F(yi)/den for c in num]
-        res=qtrim([ (res[k] if k<len(res) else 0)+(t[k] if k<len(t) else 0) for k in range(max(len(res),len(t)))])
-    if any(x.denominator!=1 for x in res): return None
-    return trim([int(x) for x in res])
-def evalp(p,x): 
-    r=0
-    for c in reversed(p): r=r*x+c
-    return r
-def proper_factor(p):
-    d=(len(p)-1)//2
-    pts=[]; x=0; k=0
-    cand_x=[0]+[y for n in range(1,50) for y in (n,-n)]
-    for x in cand_x:
-        if len(pts)>d+0: break
-        if evalp(p,x)!=0: pts.append(x)
-        if len(pts)==d+1: break
-    import itertools
-    for ys in itertools.product(*[divisors_pm(evalp(p,x)) for x in pts]):
-        c=interp(list(zip(pts,ys)))
-        if c is None or len(c)-1<1 or len(c)-1>=len(p)-1: continue
-        if exact_div(p,c) is not None: return c
-    return None
-def irr_factor(p):
-    while len(p)-1>1:
-        q=proper_factor(p)
-        if q is None: return p
-        p=q
-    return p
-def choose(f):
-    s=stripX(sqfree(f))
-    if not s or len(s)-1<1: return None
-    return irr_factor(s)
 
-print("--- factoring path ---")
-tests=[("(X^2+1)(X-3)",mul([1,0,1],[-3,1])),("(X^2+1)^2",mul([1,0,1],[1,0,1])),
-       ("X^4-1",[-1,0,0,0,1]),("(2X-3)(X^2+X+1)",mul([-3,2],[1,1,1])),
-       ("(X^3-2)(X^2+1)",mul([-2,0,0,1],[1,0,1])),("X^2(X^2+1)",mul([0,0,1],[1,0,1]))]
-for name,f in tests:
-    if f[0]==0:
-        print(f"{name}: X | f -> degenerate case g=X^2, H=X"); continue
-    h=choose(f)
-    f1=exact_div(f,h)
-    if f1 is None: print(f"{name}: FAIL h does not divide f, h={s(h)}"); continue
-    u,v,rho=bezout(h)
-    st=setup(f,h,f1,u,v,rho); c=check(st)
-    print(f"{name}: h={s(h)} rho={rho} M={st['M']} degH={len(st['H'])-1} degg={len(st['g'])-1} checks={all(c.values())} {[k for k,x in c.items() if not x]}")
+def clear(q):
+    d = reduce(lambda acc, r: acc*r.denominator//gcd(acc, r.denominator), q, 1)
+    return trim([int(x*d) for x in q])
+
+def primpart(p):
+    c = content(p)
+    return divC(c, p) if c else p
+
+def sqfree(f):
+    g = qgcd(f, deriv(f))
+    q, _ = qdivmod([F(c) for c in f], g)
+    return primpart(clear(q))
+
+def stripX(p):
+    while p and p[0] == 0: p = exact_div(p, [0, 1])
+    return p
+
+def divisors_pm(n):
+    n = abs(n)
+    return [d*s for d in range(1, n+1) if n % d == 0 for s in (1, -1)]
+
+def evalp(p, x):
+    r = 0
+    for c in reversed(p): r = r*x + c
+    return r
+
+def interp(pts):
+    res = []
+    for i, (xi, yi) in enumerate(pts):
+        num = [F(1)]; den = F(1)
+        for j, (xj, _) in enumerate(pts):
+            if i == j: continue
+            num = qmul(num, [F(-xj), F(1)]); den *= (F(xi) - F(xj))
+        t = [c*F(yi)/den for c in num]
+        res = qtrim([(res[k] if k < len(res) else 0) + (t[k] if k < len(t) else 0)
+                     for k in range(max(len(res), len(t)))])
+    if any(x.denominator != 1 for x in res): return None
+    return trim([int(x) for x in res])
+
+def proper_factor(p):
+    import itertools
+    d = (len(p)-1)//2
+    pts = []
+    for x in [0] + [y for n in range(1, 60) for y in (n, -n)]:
+        if evalp(p, x) != 0: pts.append(x)
+        if len(pts) == d+1: break
+    for ys in itertools.product(*[divisors_pm(evalp(p, x)) for x in pts]):
+        c = interp(list(zip(pts, ys)))
+        if c is None or len(c)-1 < 1 or len(c)-1 >= len(p)-1: continue
+        if exact_div(p, c) is not None: return c
+    return None
+
+def irr_factor(p):
+    while len(p)-1 > 1:
+        q = proper_factor(p)
+        if q is None: return p
+        p = q
+    return p
+
+def choose_factor(f, strategy="irreducible"):
+    s = stripX(sqfree(f))
+    if not s or len(s)-1 < 1: return None
+    return s if strategy == "squarefree" else irr_factor(s)
+
+# ---------------------------------------------------------------- Construct.hs
+def setup_exists(f, strategy="irreducible"):
+    h = choose_factor(f, strategy)
+    if h is None: raise ValueError("f has no nonconstant factor with nonzero constant term")
+    f1 = exact_div(f, h)
+    if f1 is None: raise ValueError("h does not divide f")
+    u, v, rho = bezout(h)
+    return setup(f, h, f1, u, v, rho)
+
+def theorem1(f, strategy="irreducible"):
+    if not f or len(f)-1 < 1: raise ValueError("f must be nonconstant")
+    if f[0] == 0: return [0, 0, 1], [0, 1]          # §6: g = X^2, H = X
+    S = setup_exists(f, strategy)
+    return S['g'], S['H']
+
+# ---------------------------------------------------------------- Main.hs
+def demo():
+    print("=== §8, fed the spec's own Bezout data: must reproduce the spec exactly ===")
+    for name, f, h, u, v, rho, expH, expW, expg in [
+        ("8.1  f = qX - p at p=3,q=2", [-3,2],[-3,2],[],[1],2, [1,4],[0,2],[0,-12,-24]),
+        ("8.2  f = X^2 + 1",  [1,0,1],[1,0,1],[2],[0,-1],2, [1,0,4],[0,1],[0,3,0,4]),
+        ("8.3  f = X^3 - 2",  [-2,0,0,1],[-2,0,0,1],[3],[0,-1],-6, [1,0,0,-864],[0,-2],[0,16,0,0,-3456]),
+    ]:
+        S = setup(f, h, [1], u, v, rho)
+        cs = run_checks(S)
+        print(f"  {name}")
+        print(f"    H matches spec: {S['H']==expH}   W: {S['W']==expW}   g: {S['g']==expg}")
+        bad = [n for n, o in cs if not o]
+        print(f"    {len(cs)} checks: {'all ok' if not bad else 'FAILED ' + str(bad)}")
+
+    print()
+    print("=== 8.4  the hand-tuned quintic (a check of the statement, not the construction) ===")
+    f84 = [-1,-1,0,1]; g84 = [118,-1610,9085,-26450,39675,-24334]; h84 = [-1,8,-23,23]
+    print(f"    g' = -230(23X-7)H : {deriv(g84) == mul([-230], mul([-7,23], h84))}")
+    print(f"    H | g'            : {exact_div(deriv(g84), h84) is not None}")
+    cof = exact_div(comp(f84, g84), mul(h84, h84))
+    print(f"    H^2 | f(g)        : {cof is not None}  (cofactor of degree {len(cof)-1})")
+
+    print()
+    print("=== the program's own choices, end to end ===")
+    for name, f in [("X^2+1",[1,0,1]), ("X^3-2",[-2,0,0,1]), ("X^3-X-1",[-1,-1,0,1]),
+                    ("2X-3",[-3,2]), ("X^4+1",[1,0,0,0,1]),
+                    ("(X^2+1)(X-3)", mul([1,0,1],[-3,1])), ("(X^2+1)^2", mul([1,0,1],[1,0,1])),
+                    ("X^4-1",[-1,0,0,0,1]), ("8.5  X^3-X^2-2X-8",[-8,-2,-1,1])]:
+        if f[0] == 0:
+            print(f"  {name}: X | f, degenerate case g = X^2, H = X"); continue
+        S = setup_exists(f)
+        cs = run_checks(S)
+        bad = [n for n, o in cs if not o]
+        print(f"  {name}:  h = {s(S['h'])}   rho = {S['rho']}   M = {S['M']}")
+        print(f"      H = {s(S['H'])}")
+        print(f"      g = {s(S['g'])}")
+        print(f"      {len(cs)} checks: {'all ok' if not bad else 'FAILED ' + str(bad)}"
+              f"   theorem1 agrees: {theorem1(f) == (S['g'], S['H'])}")
+
+if __name__ == "__main__":
+    import sys
+    a = sys.argv[1:]
+    if a == ["--demo"]:
+        demo()
+    elif a:
+        strat = "squarefree" if "--squarefree" in a else "irreducible"
+        f = trim([int(x) for x in a if not x.startswith("--")])
+        S = setup_exists(f, strat)
+        for k in ("h","u","v","rho","h0","M","H","W","g"):
+            print(f"{k:>4} = {s(S[k]) if isinstance(S[k], list) else S[k]}")
+        print()
+        for n, o in run_checks(S):
+            print(("  ok   " if o else "  FAIL ") + n)
+    else:
+        print(__doc__)
