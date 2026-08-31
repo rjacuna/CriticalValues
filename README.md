@@ -29,7 +29,9 @@ Build with `lake exe cache get && lake build` (Lean 4.32.2).
 | §2.1 | existence of a `Setup` | `setup_of_factor`, `setup_exists` | proved |
 | §6 | the degenerate case `X ∣ f` | `main_of_X_dvd` | proved |
 | §1.1 | **Theorem 1** | `main` | proved |
+| §1.1 | Theorem 1 with `deg g ≥ 2`, `deg H ≥ 1` | `main_strong` | proved |
 | §1.2 | Corollary 2 | `cor2` | proved |
+| §1.2 | Corollary 2, no side condition | `main_cor2` | proved |
 | §7 | `β = α/M` is a critical point | `Setup.critical_point` | proved |
 | §1.3 | Corollary 3, forward | `exists_critical_point_of_isAlgebraic` | proved |
 | §1.3 | Corollary 3, converse | `isAlgebraic_critical_value` | proved |
@@ -115,6 +117,15 @@ involved, exhibiting `h ∣ C M` — impossible for a nonconstant `h`.
 Theorem 1 and Corollary 2. The case split is only on whether `X ∣ f`; §6's
 `g = X²`, `H = X` covers `f = X·(X²+1)` as well as `f = c·Xᵏ`, so the split is
 on divisibility by `X`, not on `f` being a monomial.
+
+**`g' ≠ 0` is automatic.** `cor2` takes it as a hypothesis because it is stated
+for an arbitrary `g`, but the construction never returns a `g` without it:
+`main_strong` records `deg g ≥ 2` in both branches — by Lemma E
+(`deg g = deg h + deg W`, both summands `≥ 1`) in the main case, and because
+`g = X²` in the degenerate one — and characteristic zero does the rest. Note
+this never inspects `deg f`: `deg f ≥ 1` suffices, and `deg f = 1` really does
+occur (test 8.1 produces a quadratic `g`). `main_cor2` is Corollary 2 with the
+hypothesis discharged.
 
 ### `CriticalValues/Critical.lean`
 
