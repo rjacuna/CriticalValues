@@ -50,7 +50,7 @@ function loadDesmos() {
 /** The critical point the selected root belongs to, by value: β is printed from
  *  α/M and the root of g' is found numerically, so the decimals can disagree in
  *  the last place and string equality would pick nothing. */
-function split(crit, beta) {
+export function split(crit, beta) {
   const b = Number(beta);
   let sel = null, best = Infinity;
   for (const c of crit) {
