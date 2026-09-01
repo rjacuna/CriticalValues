@@ -27,7 +27,7 @@ const wasmBackend = {
     const bytes = await (await fetch("./crit.wasm")).arrayBuffer();
     const mod = await WebAssembly.compile(bytes);
     const { wasi, setMemory } = wasiImports(mod);
-    const { default: ghcJsffi } = await import("./crit.js");
+    const { default: ghcJsffi } = await import("../crit.js");
     const jsffi = {};
     const inst = await WebAssembly.instantiate(mod, {
       wasi_snapshot_preview1: wasi,
@@ -41,6 +41,7 @@ const wasmBackend = {
   },
   async solve(wire) {
     const hs = await this._load();
+    // exported `sync`, so this is a string rather than a Promise
     return JSON.parse(hs.solve(wire));
   },
 };

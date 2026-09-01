@@ -2,42 +2,13 @@
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
 import { pickBackend } from "./backend.js";
+import { parsePolynomial } from "./parse.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 let backend = null;
 let state = { data: null, selected: 0 };
-
-// ---------------------------------------------------------------- input
-// Accepts "x^3 - 2" or a coefficient list "-2, 0, 0, 1" (low to high).
-// String munging only; the polynomial itself is the backend's problem.
-function parseInput(raw) {
-  const s = raw.trim().toLowerCase().replace(/\s+/g, "");
-  if (!s) throw new Error("enter a polynomial");
-  if (!/[a-z]/.test(s)) {
-    const cs = s.split(",").filter(Boolean);
-    if (!cs.every((c) => /^[+-]?\d+$/.test(c))) throw new Error("coefficients must be integers");
-    return cs;
-  }
-  const v = (s.match(/[a-z]/g) || ["x"])[0];
-  const terms = s.replace(/-/g, "+-").split("+").filter(Boolean);
-  const co = new Map();
-  for (const t of terms) {
-    const m = t.match(new RegExp(`^([+-]?\\d*)\\*?(?:${v}(?:\\^(\\d+))?)?$`));
-    if (!m) throw new Error(`cannot read "${t}"`);
-    const hasVar = t.includes(v);
-    const deg = hasVar ? (m[2] ? parseInt(m[2], 10) : 1) : 0;
-    let c = m[1];
-    if (c === "" || c === "+") c = "1"; else if (c === "-") c = "-1";
-    co.set(deg, (co.get(deg) || 0n) + BigInt(c));
-  }
-  const n = Math.max(...co.keys());
-  const out = [];
-  for (let i = 0; i <= n; i++) out.push(String(co.get(i) ?? 0n));
-  while (out.length > 1 && out[out.length - 1] === "0") out.pop();
-  return out;
-}
 
 // ---------------------------------------------------------------- rendering
 const tex = (el, s, display = false) => {
@@ -191,9 +162,22 @@ const fail = (m) => { const a = $("#alert"); a.textContent = m; a.classList.remo
 
 async function compute() {
   $("#alert").classList.add("d-none");
-  let coeffs;
-  try { coeffs = parseInput($("#finput").value); }
+  let coeffs, scaled;
+  try { ({ coeffs, scaled } = parsePolynomial($("#finput").value)); }
   catch (e) { fail(String(e.message || e)); return; }
+
+  // Echo what was actually parsed. The checks cannot catch a mis-parse — they
+  // verify the construction for the f they were handed — so this has to be
+  // visible.
+  const fEcho = $("#fecho");
+  fEcho.innerHTML = "";
+  renderPolyWrapped(fEcho, "f", coeffs);
+  if (scaled) {
+    const n = document.createElement("span");
+    n.className = "text-body-secondary ms-2";
+    n.textContent = "(cleared denominators — same roots)";
+    fEcho.append(n);
+  }
 
   $("#results").classList.add("d-none");
   $("#stickysel").classList.remove("on");

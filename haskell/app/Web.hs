@@ -7,7 +7,10 @@ module Web (solve) where
 import GHC.Wasm.Prim
 import WebCore (run)
 
-foreign export javascript "solve" solve :: JSString -> IO JSString
+-- `sync` matters: without it a JSFFI export returns a Promise, because GHC
+-- defaults to running the export on the RTS scheduler. The construction is a
+-- pure function and the caller wants a string back.
+foreign export javascript "solve sync" solve :: JSString -> IO JSString
 
 solve :: JSString -> IO JSString
 solve = pure . toJSString . run . fromJSString

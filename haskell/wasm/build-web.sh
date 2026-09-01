@@ -7,15 +7,16 @@
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
+OUT="$ROOT/web"          # the page fetches ./crit.wasm from web/
 
 . ~/.ghc-wasm/env
 
 wasm32-wasi-ghc -O2 -no-hs-main -optl-mexec-model=reactor \
   -i"$ROOT/src" -i"$ROOT/app" \
   -outputdir "${CRIT_WASM_BUILD:-$HOME/.cache/crit-wasm}/hs" \
-  "$ROOT/app/Web.hs" -o "$HERE/crit.wasm"
+  "$ROOT/app/Web.hs" -o "$OUT/crit.wasm"
 
 # The post-link script parses the module and emits the JS side of the JSFFI.
-"$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$HERE/crit.wasm" -o "$HERE/crit.js"
+"$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$OUT/crit.wasm" -o "$OUT/crit.js"
 
-echo "built $HERE/crit.wasm and crit.js"
+echo "built $OUT/crit.wasm and crit.js"
