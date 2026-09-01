@@ -3,6 +3,7 @@
 // from the compiled Haskell.
 import { pickBackend, loadFlint } from "./backend.js";
 import { showGraph, openInDesmos } from "./desmos.js";
+import { url as geogebraUrl } from "./geogebra.js";
 import { toWire } from "./parse.js";
 
 const $ = (s) => document.querySelector(s);
@@ -93,6 +94,7 @@ function select(i) {
       alpha: r.alpha, beta: r.beta, crit: s.crit || [], plot: s.plot,
     };
     panel.dataset.payload = JSON.stringify(payload);
+    $("#opengeogebra").href = geogebraUrl(payload);
     const n = payload.crit.length;
     $("#desmos-k").textContent = `k = ${s.plot ? s.plot.k : 1}`;
     $("#desmos-cap").textContent =
@@ -206,6 +208,19 @@ function busy(on, text = "working…") {
   $("#busytext").textContent = text;
   $("#go").disabled = on;
 }
+// say something happened on the button itself, rather than in a panel
+function flash(b, text, ms = 1400) {
+  const old = b.textContent, wasOutline = b.classList.contains("btn-outline-secondary");
+  b.textContent = text;
+  b.classList.add("btn-success");
+  if (wasOutline) b.classList.remove("btn-outline-secondary");
+  setTimeout(() => {
+    b.textContent = old;
+    b.classList.remove("btn-success");
+    if (wasOutline) b.classList.add("btn-outline-secondary");
+  }, ms);
+}
+
 const fail = (m) => { const a = $("#alert"); a.textContent = m; a.classList.remove("d-none"); };
 
 async function compute() {
@@ -263,28 +278,14 @@ addEventListener("DOMContentLoaded", async () => {
   $$(".ex").forEach((b) => b.addEventListener("click", () => {
     $("#finput").value = b.dataset.f; compute();
   }));
-  // Desmos cannot be handed a graph by link, so the expressions travel by
-  // clipboard and the user has to paste once. Saying so is the whole feature —
-  // a tab that opens onto an empty calculator just looks broken.
-  $("#opendesmos").addEventListener("click", async () => {
-    const d = JSON.parse($("#col-graph").dataset.payload || "{}");
-    const { copied, opened, text } = await openInDesmos(d);
-    const box = $("#desmos-handoff"), pre = $("#handoff-exprs");
-    box.classList.remove("d-none");
-    // show the text whenever the hand-off did not fully work: a blocked popup
-    // leaves the message pointing at expressions that have to be there
-    const needText = !copied || !opened;
-    pre.classList.toggle("d-none", !needText);
-    if (needText) pre.textContent = text;
-    $("#handoff-msg").innerHTML = !opened
-      ? "The new tab was blocked. Allow pop-ups for this page, or open "
-        + '<a href="https://www.desmos.com/calculator" target="_blank" rel="noopener">'
-        + "desmos.com/calculator</a> yourself and paste the expressions below."
-      : copied
-      ? "<strong>Copied.</strong> In the Desmos tab that just opened, click the "
-        + "expression list and paste (⌘V / Ctrl+V) — it becomes one row per line. "
-        + "Desmos has no way to receive a graph by link, so this is the hand-off."
-      : "The clipboard was refused. Copy these into the Desmos tab that just opened:";
+  // The GeoGebra link's href is set in select(); it needs no handler. Desmos
+  // has no populated URL — the query string is discarded and a saved-graph
+  // link needs an account — so its expressions go by clipboard, and the button
+  // reports that the way the copy buttons do.
+  $("#opendesmos").addEventListener("click", async (e) => {
+    const b = e.currentTarget;
+    const { copied } = await openInDesmos(JSON.parse($("#col-graph").dataset.payload || "{}"));
+    flash(b, copied ? "Copied — paste there" : "Copy failed");
   });
 
   for (const id of ["#copyg", "#copygp", "#copyb", "#copydesmos"]) {
@@ -294,11 +295,7 @@ addEventListener("DOMContentLoaded", async () => {
       const v = b.dataset.copy;
       if (!v) return;
       try { await navigator.clipboard.writeText(v); } catch { return; }
-      const old = b.textContent;
-      b.textContent = "Copied"; b.classList.add("btn-success");
-      b.classList.remove("btn-outline-secondary");
-      setTimeout(() => { b.textContent = old; b.classList.remove("btn-success");
-                         b.classList.add("btn-outline-secondary"); }, 1200);
+      flash(b, "Copied");
     });
   }
   compute();
