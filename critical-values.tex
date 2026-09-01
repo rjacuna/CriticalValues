@@ -818,12 +818,32 @@ paper claims. And the last row is scaffolding --- statements about Lean's
 algebraic hierarchy rather than about mathematics.
 
 Two gaps in Mathlib are worth recording in the same spirit, since they are the
-places where the development could not import and had to build. Mathlib has the
-translation $X \mapsto X + c$ as an algebra equivalence but not the dilation
-$X \mapsto cX$, which Lemma \ref{LD} needs. And
-\texttt{Polynomial.binomExpansion} is stated for \texttt{eval} rather than for
-\texttt{comp}, so Lemma \ref{LT} is obtained by transporting it along
-$C : \Z[X] \to (\Z[X])[X]$ rather than by citing it.
+places where the development could not import and had to build. Neither changes
+any statement, but they are gaps of different kinds.
+
+\id{Polynomial.binomExpansion} is stated for \id{eval} rather than for
+\id{comp}, so Lemma \ref{LT} is obtained by transporting it along
+$C : \Z \to \Z[X]$: composition \emph{is} evaluation once the coefficients are
+pushed up into $\Z[X]$. That is eight lines and no mathematics.
+
+The dilation is not notation. Mathlib has the translation $X \mapsto X + c$ as
+an algebra equivalence but not $X \mapsto cX$, and the reason is that the
+latter is an automorphism only when $c$ is invertible. Over $\Z$ the map
+$p \mapsto \dil{p}$ is injective but not surjective, and it does not preserve
+irreducibility: for $h = X + 3$ with $h_{0} = 3$ and $\rho = 1$, so $M = 3$,
+\[
+  \dil{h} = 3X + 3 = 3(X+1)
+\]
+is reducible in $\Z[X]$. This is systematic rather than accidental. Since
+$h_{0} \mid M$, every coefficient $h_{j}M^{j}$ with $j \geq 1$ is divisible by
+$h_{0}$, and the constant coefficient is $h_{0}$ itself, so $h_{0}$ always
+divides the content of $\dil{h}$. Dividing it out is at once what makes $H$
+integral in Lemma \ref{LI} and what removes the obstruction to irreducibility,
+and $H(0) = 1$ then makes $H$ primitive. So Lemma \ref{LD} has to pass through
+$\Q$, where the dilation is an automorphism with inverse the dilation by
+$M^{-1}$, and return by Gauss --- and it would have to do so whether or not
+Mathlib supplied the equivalence. The gap cost twenty-five lines; it cost the
+argument nothing.
 
 \printbibliography
 
