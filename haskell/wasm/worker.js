@@ -16,7 +16,7 @@ let flint = null;     // Emscripten module
 let hs = null;        // { solve }
 
 async function loadFlint() {
-  const { default: createFlintModule } = await import("./flint.js");
+  const { default: createFlintModule } = await import("./flint.mjs");
   const m = await createFlintModule();
   return {
     factor(polyStr) {

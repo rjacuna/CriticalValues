@@ -65,6 +65,14 @@ if [ ! -f "$PREFIX/lib/libflint.a" ]; then
   fetch "https://github.com/flintlib/flint/releases/download/v$FLINT_VERSION/flint-$FLINT_VERSION.tar.gz" "flint.tar.gz"
   rm -rf "flint-$FLINT_VERSION"; tar xf flint.tar.gz
   cd "flint-$FLINT_VERSION"
+  # FLINT enables its getrusage-based profiler whenever __unix__ is defined,
+  # which Emscripten does — but Emscripten does not declare getrusage, and the
+  # non-Linux path then reaches for sysctl/getpid as well. The profiler is
+  # diagnostic only and never on the factoring path, so switch it off at the
+  # guard rather than patch inside it.
+  sed -i '' \
+    's|^#if (defined(__unix__) \&\& !defined(__CYGWIN__)) \|\| defined(__APPLE__)$|#if ((defined(__unix__) \&\& !defined(__CYGWIN__)) \|\| defined(__APPLE__)) \&\& !defined(__EMSCRIPTEN__)|' \
+    src/profiler.h
   emconfigure ./configure --host=none --disable-assembly --disable-shared \
       --enable-static --with-gmp="$PREFIX" --with-mpfr="$PREFIX" --prefix="$PREFIX"
   emmake make -j4
@@ -77,7 +85,8 @@ emcc -O2 "$HERE/crit_flint.c" \
   -I"$PREFIX/include" -L"$PREFIX/lib" -lflint -lmpfr -lgmp \
   -sEXPORTED_FUNCTIONS='["_crit_flint_factor","_crit_flint_free","_malloc","_free"]' \
   -sEXPORTED_RUNTIME_METHODS='["ccall","cwrap","stringToNewUTF8","UTF8ToString"]' \
-  -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_NAME=createFlintModule \
-  -o "$HERE/flint.js"
+  -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 \
+  -sENVIRONMENT=web,worker,node -sEXPORT_NAME=createFlintModule \
+  -o "$HERE/flint.mjs"
 
-echo "built $HERE/flint.js and flint.wasm"
+echo "built $HERE/flint.mjs and flint.wasm"

@@ -3,7 +3,7 @@
 Two independent WebAssembly modules, talking through JavaScript:
 
 * **`flint.wasm`** — GMP 6.3.0 + MPFR 4.2.2 + FLINT 3.4.0, built with
-  Emscripten. Factors `f`. `build-flint-wasm.sh`.
+  Emscripten. Factors `f`. `build-flint-wasm.sh`. 4.9 MB.
 * **`crit.wasm`** — the construction and all 22 checks, built with GHC's
   `wasm32-wasi` backend as a reactor module. `build-web.sh`.
 
@@ -12,6 +12,22 @@ Two independent WebAssembly modules, talking through JavaScript:
 ./build-web.sh            # short: the library is base-only
 ./serve.sh                # http://localhost:8000
 ```
+
+## Measured
+
+FLINT in wasm, under node, factoring four polynomials:
+
+```
+X^2 - 2               irreducible
+X^4 - 1               (X-1)(X+1)(X^2+1)
+X^12 - 1              six cyclotomic factors
+Swinnerton-Dyer S3    irreducible
+total: 9.9 ms
+```
+
+`X^12 - 1` is the input that times out the pure-Haskell Kronecker search at a
+ten-second budget (`OPTIMIZATION.md` §5c). In the browser runtime it is part of
+a ten-millisecond batch.
 
 ## Why two modules, and why it costs nothing
 
