@@ -32,7 +32,15 @@
 
   .katex { font-size: 1em; }
   .scrollx { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .bigpoly { max-height: 40vh; overflow: auto; overflow-wrap: anywhere; }
+
+  /* g can run to hundreds of digits, so it must wrap rather than hide in a
+     scroller. Do NOT do this by loosening white-space on .katex: KaTeX puts
+     every glyph in its own span, so overflow-wrap:anywhere shatters the
+     polynomial into one digit per line. Instead each *term* is its own KaTeX
+     element and the container wraps between them — the natural break point. */
+  .wrapmath { display: flex; flex-wrap: wrap; align-items: baseline;
+              column-gap: .35rem; row-gap: .2rem; }
+  .wrapmath > span { white-space: nowrap; }
   .mono { font-family: var(--bs-font-monospace); font-size: .8rem; }
 
   /* Small screens: the panels stack, and a compact bar keeps the chosen root
@@ -51,7 +59,7 @@
   <header class="mb-3">
     <h1 class="h4 mb-1">Critical values of integer polynomials</h1>
     <p class="text-body-secondary small mb-0">
-      For <span id="hdr-f">f ∈ ℤ[X]</span> find <em>g</em> and irreducible <em>H</em> with
+      For <span id="hdr-f">f ∈ ℤ[x]</span> find <em>g</em> and irreducible <em>H</em> with
       <em>H</em> ∣ <em>g</em>′ and <em>H</em>² ∣ <em>f</em> ∘ <em>g</em>. Every root of
       <em>f</em> is a critical value of <em>g</em>, at <em>β</em> = <em>α</em>/<em>M</em>.
     </p>
@@ -116,7 +124,7 @@
                   type="button" data-copy="">Copy</button>
         </div>
         <div class="card-body">
-          <div id="gout" class="scrollx bigpoly"></div>
+          <div id="gout" class="wrapmath"></div>
           <hr class="my-2">
           <div class="small text-body-secondary" id="setupmeta"></div>
           <details class="mt-2">
