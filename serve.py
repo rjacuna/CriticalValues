@@ -16,11 +16,11 @@ ROOT = HERE.parent
 
 
 def find_binary():
+    """Optional. Once web/crit.wasm exists the page runs the construction in
+    the browser and never posts here, so a missing critjson is not fatal."""
     hits = sorted(ROOT.glob("dist-newstyle/**/critjson"))
     hits = [h for h in hits if h.is_file() and os.access(h, os.X_OK)]
-    if not hits:
-        sys.exit("critjson not built — run:  cabal build critjson")
-    return hits[-1]
+    return hits[-1] if hits else None
 
 
 class Backend:
@@ -87,7 +87,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             self.send_error(400, "bad JSON")
             return
-        out = self.backend.solve(wire).encode("utf-8")
+        if self.backend.path is None:
+            out = json.dumps({"ok": False,
+                              "error": "no backend: build crit.wasm, or cabal build critjson"}).encode()
+        else:
+            out = self.backend.solve(wire).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(out)))
@@ -104,7 +108,9 @@ def main():
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
     Handler.backend = Backend(find_binary())
-    print(f"critjson: {Handler.backend.path}")
+    wasm = HERE / "crit.wasm"
+    print(f"crit.wasm: {'present — the page will run in-browser' if wasm.exists() else 'absent'}")
+    print(f"critjson:  {Handler.backend.path or 'not built (only needed without crit.wasm)'}")
     print(f"serving:  http://localhost:{args.port}/")
     http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
 

@@ -69,8 +69,8 @@
     <div class="input-group input-group-lg">
       <input id="finput" class="form-control tap" spellcheck="false"
              autocapitalize="off" autocomplete="off" autocorrect="off"
-             inputmode="text" value="x^3 - 2"
-             aria-label="the polynomial f, as x^3-2 or as coefficients low to high">
+             inputmode="text" value="(x^3 + x - 2)*(x + 2)"
+             aria-label="the polynomial f — an expression such as (x^3+x-2)*(x+2), or coefficients low to high">
       <button id="go" class="btn btn-primary tap px-4" type="submit">Compute</button>
     </div>
     <div class="form-text d-flex flex-wrap gap-2 align-items-center mt-2">
@@ -83,6 +83,8 @@
       <span class="ms-auto badge text-bg-secondary" id="backend-badge">…</span>
     </div>
   </form>
+
+  <div id="fecho" class="wrapmath small text-body-secondary mb-3"></div>
 
   <div id="alert" class="alert alert-danger d-none" role="alert"></div>
 
@@ -157,6 +159,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
         integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
         crossorigin="anonymous"></script>
+<script src="./vendor/math.js"></script>
 <script type="module" src="./js/app.js"></script>
 </body>
 </html>
