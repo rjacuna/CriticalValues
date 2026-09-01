@@ -53,4 +53,54 @@ for f in Flint2.cabal $(grep -rl 'Data\.Number\.Flint\.Support\.Mpfr\?\.Mat' src
     "$f"
 done
 
+# 5. fmpz_lll_check_babai_heuristic takes mpf_mat arguments, so its Haskell
+#    signature needs CMpfMat from the module removed above. The underlying
+#    FLINT function went with mpf_mat; drop the declaration. (Its sibling
+#    fmpz_lll_check_babai_heuristic_d is unaffected and stays.)
+sed -i '' \
+  -e '/fmpz_lll\.h fmpz_lll_check_babai_heuristic"/,+1d' \
+  -e '/, fmpz_lll_check_babai_heuristic$/d' \
+  src/Data/Number/Flint/Fmpz/LLL/FFI.hsc
+
+# 6. Flint2 vendors ~160 small C helpers in csrc/. Two of them are functions
+#    FLINT 3 now provides itself, with different signatures, so the vendored
+#    declaration and FLINT's header collide. Give the vendored copies the
+#    trailing underscore Flint2 already uses for such shims. For
+#    fmpz_factor_fprint the Haskell binding follows the shim; for
+#    fmpz_mpoly_q_get_str_pretty the binding is header-qualified and so now
+#    resolves to FLINT's own, which is what it wanted all along.
+for n in fmpz_factor_fprint fmpz_mpoly_q_get_str_pretty; do
+  for f in $(grep -rl "$n" csrc 2>/dev/null); do sed -i '' "s/$n/${n}_/g" "$f"; done
+  for f in $(grep -rl "\"$n\"" src 2>/dev/null); do sed -i '' "s/\"$n\"/\"${n}_\"/g" "$f"; done
+done
+
+# 7. FLINT 3 slimmed its headers, so some declarations are no longer pulled in
+#    transitively. Two vendored files need an explicit include. Insert after the
+#    last existing #include -- these files open with a block comment, so
+#    appending at line 1 would land inside it.
+add_include() {
+  awk -v inc="$2" '
+    { l[NR] = $0; if ($0 ~ /^#include/) last = NR }
+    END { for (i = 1; i <= NR; i++) { print l[i]; if (i == last) print inc } }
+  ' "$1" > "$1.tmp" && mv "$1.tmp" "$1"
+}
+add_include csrc/fmpz_mpoly_factor/io.c '#include <flint/fmpz.h>'
+add_include csrc/ca_ext/io.c            '#include <flint/calcium.h>'
+
+# 8. The same `rows` removal hits two vendored C helpers. FLINT 3 supplies
+#    accessor macros, so use those rather than open-coding entries+stride.
+sed -i '' 's|return mat->rows\[i\] + j;|return arb_mat_entry(mat, i, j);|' csrc/arb_mat/entry.c
+sed -i '' 's|return mat->rows\[i\] + j;|return acb_mat_entry(mat, i, j);|' csrc/acb_mat/entry.c
+
+# 9. And the vendored C helper for the dropped mpfr_mat module goes with it.
+rm -rf csrc/mpfr_mat csrc/mpfr_mat.h
+sed -i '' \
+  -e '/csrc\/mpfr_mat\/swap_entrywise\.c/d' \
+  -e '/^      mpfr_mat\.h$/d' \
+  Flint2.cabal
+
+# 10. FLINT 3 renamed ~30 functions, leaving _Pragma("GCC error") stubs behind.
+#     Exactly one is used by the vendored C.
+sed -i '' 's/_perm_set_one/_perm_one/g' csrc/psl2z/word_problem.c
+
 echo "patched $D for FLINT 3.4"
