@@ -165,17 +165,6 @@ function render(d) {
     list.append(el);
   });
 
-  if (d.degenerate) {
-    $("#col-graph").classList.add("d-none");
-    renderPolyWrapped($("#gout"), "g", ["0", "0", "1"]);
-    $("#gmeta").textContent = "§6, X ∣ f";
-    $("#setupmeta").innerHTML = "H = x";
-    $("#copyg").dataset.copy = "x^2";
-    $("#checks").innerHTML = "";
-    $("#hsource").textContent = "";
-    return;
-  }
-
   select(0);
 }
 
@@ -190,6 +179,14 @@ function renderSetup(d, s) {
 
   const meta = $("#setupmeta");
   meta.innerHTML = "";
+  if (s.sixth) {
+    const note = document.createElement("div");
+    note.className = "small text-body-secondary mb-1";
+    note.innerHTML = "§6: <em>x</em> ∣ <em>f</em>, so <em>g</em> = <em>x</em>\u00B2 and "
+                   + "<em>H</em> = <em>x</em> settle it — the construction of §2 needs "
+                   + "<em>h</em>(0) ≠ 0 and does not apply to the root 0.";
+    meta.append(note);
+  }
   for (const [k, v] of [["h", polyTex(s.h)], ["H", polyTex(s.H)], ["\\rho", s.rho]]) {
     const row = document.createElement("div");
     row.className = "scrollx mb-1";
