@@ -36,6 +36,7 @@ Build with `lake exe cache get && lake build` (Lean 4.32.2).
 | §1.3 | Corollary 3, forward | `exists_critical_point_of_isAlgebraic` | proved |
 | — | *every* root of `h` is a critical value of one `g` | `exists_critical_point_all_roots` | proved |
 | — | …hence every root of an irreducible `f` | `exists_critical_point_all_roots_of_irreducible` | proved |
+| — | every root of *any* nonconstant `f` | `exists_critical_point_of_root` | proved |
 | §1.3 | Corollary 3, converse | `isAlgebraic_critical_value` | proved |
 | §8 | test vectors 8.1–8.4 | `test81_*` … `test84_*` | proved |
 | §8 | non-vacuity of `Setup` | `nonempty_Setup_X_sq_add_one` | proved |
@@ -137,15 +138,23 @@ computed — and `g'(β) = 0` is not a computation at all, since `H ∣ g'` is
 already Corollary C' and `H(β) = 0` because `h₀H = h(M·X)` vanishes at `β`.
 
 **On "some root" versus "every root".** Theorem 1's shape invites the weaker
-reading, so it is stated outright: `Setup.critical_point` is universally
-quantified over the roots of `S.h` with `S.g` fixed, so a *single* `g` witnesses
-all of them at once (`exists_critical_point_all_roots`). The scope is `h`, not
-`f` — when `f` is reducible the construction runs on one irreducible factor and
-says nothing about the roots of the others. Taking `h` to be the primitive
-squarefree part of `f` instead covers every root of `f`, since §3 and §4 never
-use `hirr`; the cost is that `H` is then no longer irreducible. The Haskell
-`--squarefree` mode does exactly this, so it proves a statement stronger in this
-respect than the default.
+reading, so both directions are stated outright.
+
+Within one `g`: `Setup.critical_point` is universally quantified over the roots
+of `S.h` with `S.g` fixed, so a single `g` witnesses all roots of `h` at once
+(`exists_critical_point_all_roots`).
+
+Across a reducible `f`: nothing extra is needed. In
+`exists_critical_point_of_root` the `∃ g` sits inside the `∀ α`, so each root of
+`f` is served by its own irreducible factor and its own `g`, and the reducible
+case reduces to the irreducible one with no further argument. Minimality is not
+used either — any irreducible `h` with `h(α) = 0` will do, which is why
+`minpoly` never appears.
+
+A *single* `g` covering every root of a reducible `f` simultaneously would be
+strictly stronger, and is not what the corollary asserts. It is available if ever
+wanted: take `h` to be the primitive squarefree part of `f`, which the Haskell
+`--squarefree` mode does, at the cost of `H` no longer being irreducible.
 
 Corollary 3 is packaged without `minpoly`: an algebraic `α` is a root of some
 `p ∈ ℤ[X]`, and factoring `p.primPart` in the UFD `ℤ[X]` gives an irreducible

@@ -133,11 +133,13 @@ Worth stating separately, because Theorem 1's shape invites the weaker reading.
 `S.g` fixed, so one `g` witnesses all of them at once; the `M` is exposed here
 because the critical point is always `α / M`.
 
-The scope is `h`, though, not `f`. When `f` is reducible the construction runs
-on one irreducible factor, and the roots of the *other* factors are not
-witnessed by this `g`. Taking `h` to be the primitive squarefree part of `f`
-instead would cover every root of `f` — §3 and §4 never use `hirr`, so both
-divisibilities survive — at the cost of `H` no longer being irreducible. -/
+The scope is `h`, though, not `f`: a *single* `g` covering every root of a
+reducible `f` at once is a strictly stronger statement, and not the one anyone
+wants — see `exists_critical_point_of_root`, where the `∃ g` is inside the
+`∀ α` and each root is served by its own factor. (Should the stronger form ever
+be wanted, taking `h` to be the primitive squarefree part of `f` gives it: §3
+and §4 never use `hirr`, so both divisibilities survive, at the cost of `H` no
+longer being irreducible. That is what the Haskell `--squarefree` mode does.) -/
 theorem exists_critical_point_all_roots {K : Type*} [Field K] [CharZero K] {h : ℤ[X]}
     (hirr : Irreducible h) (hprim : h.IsPrimitive) (hn : 1 ≤ h.natDegree)
     (hh0 : h.coeff 0 ≠ 0) :
@@ -160,6 +162,21 @@ theorem exists_critical_point_all_roots_of_irreducible {K : Type*} [Field K] [Ch
         aeval (α / ((M : ℤ) : K)) g = α ∧
           aeval (α / ((M : ℤ) : K)) (derivative g) = 0 :=
   exists_critical_point_all_roots hirr hprim hn hf0
+
+/-- **The reducible case is the irreducible case.**
+
+For *any* nonconstant `f` and any root `α` of `f`, `α` is a critical value.
+There is nothing to prove beyond the quantifier order: the `∃ g` sits inside the
+`∀ α`, so each root is served by its own irreducible factor and its own `g`.
+
+Note that minimality plays no role. One needs only *some* irreducible `h` with
+`h(α) = 0`, not the one of least degree, which is why
+`exists_irreducible_aeval_eq_zero` factors an arbitrary witness in `ℤ[X]` and
+takes any factor that kills `α` — and why `minpoly` never appears. -/
+theorem exists_critical_point_of_root {K : Type*} [Field K] [CharZero K] {f : ℤ[X]}
+    (hf : f ≠ 0) {α : K} (hα : aeval α f = 0) :
+    ∃ (g : ℤ[X]) (β : K), 2 ≤ g.natDegree ∧ aeval β g = α ∧ aeval β (derivative g) = 0 :=
+  exists_critical_point_of_isAlgebraic ⟨f, hf, hα⟩
 
 /-- **Corollary 3**, converse.  A critical point of a `g` with `g' ≠ 0` is
 algebraic for the trivial reason: it is a root of `g'`, a nonzero integer
