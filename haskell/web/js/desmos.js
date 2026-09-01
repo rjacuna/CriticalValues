@@ -61,21 +61,32 @@ function split(crit, beta) {
   return { sel, others: crit.filter((c) => c !== sel) };
 }
 
-/** The expression list, as Desmos LaTeX. Also what the clipboard gets. */
+/**
+ * The expression list, as Desmos LaTeX. Also what the clipboard gets.
+ *
+ * Nothing drawn here is a number we computed. The critical points arrive only
+ * as *seeds*; Desmos refines each one with Newton's method on its own D, and
+ * the lines, the points and the labels all read the refined value. That is not
+ * ceremony — our β is printed to seven significant figures, and at the zoom
+ * this panel invites, seven figures puts the line visibly beside the place
+ * where the black curve actually crosses zero. One step of Newton from that
+ * seed already lands on the root to full double precision; three is slack.
+ */
 export function expressions({ gLatex, gpLatex, crit, plot, beta }) {
   const { sel, others } = split(crit || [], beta);
+  const refine = (v) => `N\\left(N\\left(N\\left(${v}\\right)\\right)\\right)`;
   const out = [
-    // \left( … \right) in the LaTeX, but plain G(B) inside a ${…} label: the
-    // two are different languages, and each rejects the other's parentheses.
     { id: "G", latex: `G\\left(x\\right)=${gLatex}` },
     { id: "D", latex: `D\\left(x\\right)=${gpLatex}` },
     { id: "k", latex: "k=1" },
+    { id: "N", latex: "N\\left(x\\right)=x-\\frac{D\\left(x\\right)}{D'\\left(x\\right)}" },
     { id: "cg", latex: "y=G\\left(x\\right)", color: COLORS.g, lineWidth: 2.5 },
     { id: "cd", latex: "y=\\frac{D\\left(x\\right)}{k}", color: COLORS.gp, lineWidth: 2 },
   ];
   if (others.length) {
-    const bs = others.map((c) => c.b).join(",");
-    out.push({ id: "B", latex: `B=\\left[${bs}\\right]`, hidden: true });
+    const seeds = others.map((c) => c.b).join(",");
+    out.push({ id: "B0", latex: `B_{0}=\\left[${seeds}\\right]`, hidden: true });
+    out.push({ id: "B", latex: `B=${refine("B_{0}")}`, hidden: true });
     // A is bound only so the label can name it: ${...} interpolates a variable,
     // not an expression, and ${G(B)} would print verbatim.
     out.push({ id: "A", latex: "A=G\\left(B\\right)", hidden: true });
@@ -85,7 +96,8 @@ export function expressions({ gLatex, gpLatex, crit, plot, beta }) {
       labelSize: "small", labelOrientation: "above" });
   }
   if (sel) {
-    out.push({ id: "S", latex: `S=${sel.b}`, hidden: true });
+    out.push({ id: "S0", latex: `S_{0}=${sel.b}`, hidden: true });
+    out.push({ id: "S", latex: `S=${refine("S_{0}")}`, hidden: true });
     out.push({ id: "T", latex: "T=G\\left(S\\right)", hidden: true });
     out.push({ id: "lS", latex: "x=S", color: COLORS.sel, lineWidth: 2.5 });
     out.push({ id: "pS", latex: "\\left(S,T\\right)", color: COLORS.sel,
@@ -132,14 +144,16 @@ export async function showGraph(host, fallback, data) {
 /**
  * Hand the same plot over to desmos.com.
  *
- * Desmos has no way to prefill a graph from a URL — the query string is
- * discarded (tested), and saved-graph links need an account — so the expression
- * list goes to the clipboard and the calculator opens ready for one paste,
- * which it turns into one row per line.
+ * Desmos has no way to receive a graph by link: the query string is discarded
+ * (tested), and a saved-graph URL needs an account. So the expression list goes
+ * to the clipboard and the calculator opens ready for one paste, which it turns
+ * into one row per line. The caller reports what actually happened — a blocked
+ * popup or a refused clipboard both need the user to be told something.
  */
-export function openInDesmos(data) {
+export async function openInDesmos(data) {
   const text = asText(expressions(data));
-  const copied = navigator.clipboard?.writeText(text);   // inside the gesture
-  window.open("https://www.desmos.com/calculator", "_blank", "noopener");
-  return copied ?? Promise.reject(new Error("no clipboard"));
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch { /* denied */ }
+  const w = window.open("https://www.desmos.com/calculator", "_blank", "noopener");
+  return { copied, opened: !!w, text };
 }
