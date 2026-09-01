@@ -525,44 +525,6 @@ on that $h$ produces a $g$ having $\alpha$ as a critical value. Different
 factors give different $g$. It is not the case that one $g$ serves all of a
 reducible $f$.
 
-\section{Sharpness and scope}\label{Sscope}
-
-\paragraph{$H$ cannot be required monic.} The monic form of Theorem \ref{T1} is
-false. Suppose $H$ were monic irreducible with $g(\beta) = \sqrt{2}$ and
-$g'(\beta) = 0$; then $H^{2} \mid g^{2} - 2$ in $\Z[X]$. Modulo $2$,
-$\overline{H}^{2} \mid \overline{g}^{2}$ gives $\overline{H} \mid \overline{g}$,
-so $g = HA + 2B$ for some $A, B \in \Z[X]$. Then
-\[
-  g^{2} - 2 = H^{2}A^{2} + 4HAB + 4B^{2} - 2,
-\]
-so $H^{2} \mid 4HAB + 4B^{2} - 2 = 2C$ with $C := 2HAB + 2B^{2} - 1$ and
-$\overline{C} = 1$. As $H$ is monic, division gives $2C = H^{2}D$; reducing mod
-$2$ forces $\overline{D} = 0$, so $D = 2E$ and $C = H^{2}E$, whence
-$1 = \overline{H}^{2}\overline{E}$ --- impossible for $\deg \overline{H} \geq 1$.
-So $\sqrt 2$ is not a critical value at any algebraic integer critical point.
-
-Yet $-4\sqrt{2}$ is, and monically: with $g = X^{3} - 6X$ and $H = X^{2} - 2$,
-\[
-  g' = 3(X^{2}-2) = 3H, \qquad
-  g^{2} - 32 = (X^{2}-2)^{2}(X^{2}-8) = H^{2}(X^{2}-8),
-\]
-so $H^{2} \mid f \circ g$ for $f = X^{2} - 32$. The invariant separating the two
-cases is the class of $d\alpha$ in $\Omega_{\Z[\beta]/\Z} \cong
-\Z[\beta]/(H'(\beta))$; it is neither integrality nor a unit condition.
-
-\paragraph{Higher multiplicity is free.} Since $H'(\beta)$ is a unit in
-$\Z[\beta]$, the map $\Z[X] \to \Z[\beta][Y]/(Y^{m})$ sending $X \mapsto
-\beta + Y$ is surjective, so $H^{m} \mid f \circ g$ is achievable for every
-$m \geq 1$. Theorem \ref{T1} is the case $m = 2$, which is the one the
-critical value statement needs.
-
-\paragraph{Hypotheses that are not needed.} Nothing requires $f$ to be
-separable, squarefree or primitive, and $\deg f$ is unbounded; a repeated factor
-of $f$ only helps. Characteristic zero, on the other hand, is essential, and
-enters through $h' \neq 0$. In characteristic $p$ with $\alpha$ inseparable the
-approach dies at $\rho = 0$, and the statement itself degenerates: $g = X^{p}$
-gives $f \circ g = f^{p}$, but $g' = 0$ has no irreducible factorization.
-
 \section{Examples}\label{Sex}
 
 Each line below is a closed identity, checkable by expansion.
