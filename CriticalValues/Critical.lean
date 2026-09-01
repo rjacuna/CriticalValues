@@ -125,6 +125,42 @@ theorem exists_critical_point_of_isAlgebraic {K : Type*} [Field K] [CharZero K] 
         exact hα0 ((mul_eq_zero.mp hh).resolve_right (hu.map (aeval α)).ne_zero)
     exact exists_critical_point hirr hprim hn hh0 hh
 
+/-- **Every** root of `h` is a critical value of a *single* `g` — not merely
+some root.
+
+Worth stating separately, because Theorem 1's shape invites the weaker reading.
+`Setup.critical_point` is universally quantified over the roots of `S.h` with
+`S.g` fixed, so one `g` witnesses all of them at once; the `M` is exposed here
+because the critical point is always `α / M`.
+
+The scope is `h`, though, not `f`. When `f` is reducible the construction runs
+on one irreducible factor, and the roots of the *other* factors are not
+witnessed by this `g`. Taking `h` to be the primitive squarefree part of `f`
+instead would cover every root of `f` — §3 and §4 never use `hirr`, so both
+divisibilities survive — at the cost of `H` no longer being irreducible. -/
+theorem exists_critical_point_all_roots {K : Type*} [Field K] [CharZero K] {h : ℤ[X]}
+    (hirr : Irreducible h) (hprim : h.IsPrimitive) (hn : 1 ≤ h.natDegree)
+    (hh0 : h.coeff 0 ≠ 0) :
+    ∃ (g : ℤ[X]) (M : ℤ), M ≠ 0 ∧ 2 ≤ g.natDegree ∧
+      ∀ α : K, aeval α h = 0 →
+        aeval (α / ((M : ℤ) : K)) g = α ∧
+          aeval (α / ((M : ℤ) : K)) (derivative g) = 0 := by
+  obtain ⟨S, hSh⟩ := setup_of_factor (f := h) (f₁ := 1) hirr hprim hn hh0 (by ring)
+  refine ⟨S.g, S.M, S.hM0, S.two_le_natDegree_g, fun α hα => ?_⟩
+  exact S.critical_point (by rw [hSh]; exact hα)
+
+/-- In particular, for an irreducible `f` a single `g` has *every* root of `f`
+among its critical values. This is the case Corollary 3 actually uses, since a
+minimal polynomial is irreducible. -/
+theorem exists_critical_point_all_roots_of_irreducible {K : Type*} [Field K] [CharZero K]
+    {f : ℤ[X]} (hirr : Irreducible f) (hprim : f.IsPrimitive) (hn : 1 ≤ f.natDegree)
+    (hf0 : f.coeff 0 ≠ 0) :
+    ∃ (g : ℤ[X]) (M : ℤ), M ≠ 0 ∧ 2 ≤ g.natDegree ∧
+      ∀ α : K, aeval α f = 0 →
+        aeval (α / ((M : ℤ) : K)) g = α ∧
+          aeval (α / ((M : ℤ) : K)) (derivative g) = 0 :=
+  exists_critical_point_all_roots hirr hprim hn hf0
+
 /-- **Corollary 3**, converse.  A critical point of a `g` with `g' ≠ 0` is
 algebraic for the trivial reason: it is a root of `g'`, a nonzero integer
 polynomial. -/
