@@ -16,13 +16,35 @@ There is no independent `β` to display — only `M`, and the decimal. Its close
 form would likewise just be the closed form of `α` divided by `M`, which is
 already on the left.
 
-**`g` does not change when you select a different root, and that is correct.**
-`g` depends on `h`, never on `α`. Without a factoriser `h` is the squarefree
-part of `f`, so a single `g` serves every root — which is exactly the property
-that makes this the right variant for a UI that lets you pick any root. With
-FLINT supplying an irreducible factor instead, `g` *would* change when the
-selected root belongs to a different factor of a reducible `f`; for irreducible
-`f` it stays fixed either way.
+**`g` changes with the selected root, when `f` is reducible.** `g` depends on
+`h`, never on `α` — but `h` is now the irreducible factor that the selected root
+belongs to, so `(x²+1)(x−3)` gives two of them:
+
+| root | `h` | `M` | `g` | `β` |
+|---|---|---|---|---|
+| `±i` | `x²+1` | 2 | `4x³+3x` | `∓0.5i` |
+| `3` | `x−3` | −3 | `−3x²−6x` | `−1` |
+
+For irreducible `f` there is one factor and `g` is fixed, as it should be.
+
+### Why this needed FLINT, and what it looked like without it
+
+Without a factoriser `h` is the squarefree part of `f`, which for reducible `f`
+is not a factor at all. Both divisibilities still hold — §3 and §4 never use
+irreducibility — but **`H` is then reducible**, and Theorem 1 asks for an
+irreducible one. Concretely, for `f = (x²+1)(x−3)` the squarefree route gives
+
+```
+H = 9000000x³ + 90000x² + 100x + 1  =  (100x + 1)(90000x² + 1)
+```
+
+and **all 22 checks pass**, because irreducibility of `H` is not among them —
+they test `deg H = deg h` and primitivity. So this was invisible to the
+verification and had to be fixed rather than detected.
+
+The page now says which case it is: a green badge when the factors came from
+FLINT, an amber one under `?dev` warning that `H` is irreducible only if `f`
+already is.
 
 ## Input: mathjs parses, Haskell expands
 

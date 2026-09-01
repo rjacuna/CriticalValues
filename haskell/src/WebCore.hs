@@ -31,10 +31,11 @@ import Roots
 import Radicals
 
 -- | Split on the single @'|'@, then on commas.
-parseInput :: String -> Either String (Poly, Maybe Poly)
+parseInput :: String -> Either String (Poly, [Poly])
 parseInput s = do
   f <- readF a
-  Right (f, if null (dropWhile (== ' ') b') then Nothing else Just (readPoly b'))
+  let hs = [ readPoly t | t <- splitOn ';' b', not (null (dropWhile (== ' ') t)) ]
+  Right (f, hs)
   where
     (a, b) = break (== '|') s
     b'     = drop 1 b
@@ -58,15 +59,28 @@ run input =
   case parseInput input of
     Left e -> err e
     Right (f, _) | isZero f || deg f < 1 -> err "f must be nonconstant"
-    Right (f, mh)
+    Right (f, hs)
       | coeff f 0 == 0 -> degenerate f
-      | otherwise ->
-          -- h supplied  -> FLINT chose it (the default path)
-          -- h absent     -> squarefree part: no factoring, and deg H = deg f,
-          --                 so a single g covers *every* root of f (--dev)
-          case maybe (setupExists SquareFree f) (setupOfFactor f) mh of
-            Left e  -> err e
-            Right s -> ok s
+      | otherwise      -> build f hs
+
+-- | One `Setup` per usable factor.
+--
+--   * factors supplied — they came from a factoriser, so each `H` really is
+--     irreducible and a *different* `g` serves each factor of a reducible `f`;
+--   * none supplied — fall back to the squarefree part. Still correct: §3 and
+--     §4 never use irreducibility, so both divisibilities hold and one `g`
+--     covers every root. But `H` is then only irreducible when `f` is, which
+--     the output says out loud rather than leaving implied.
+build :: Poly -> [Poly] -> String
+build f hs =
+  case setups of
+    [] -> err "f has no usable factor with nonzero constant term"
+    ss -> ok f (if null usable then "squarefree" else "factored") ss
+  where
+    usable  = [ h | h <- hs, deg h >= 1, coeff h 0 /= 0 ]
+    chosen  = if null usable then either (const []) (: []) (fmap setH (setupExists SquareFree f))
+                             else usable
+    setups  = [ s | h <- chosen, Right s <- [setupOfFactor f h] ]
 
 -- | §6. @X ∣ f@ needs no construction at all.
 degenerate :: Poly -> String
@@ -75,42 +89,56 @@ degenerate _ = obj
   , ("g", jarr (pcoeffs (pow xP 2))), ("H", jarr (pcoeffs xP))
   , ("checks", "[]") ]
 
-ok :: Setup -> String
-ok s = obj
-  [ ("ok",     "true")
-  , ("degenerate", "false")
-  , ("h",      jarr (pcoeffs (setH s)))
-  , ("u",      jarr (pcoeffs (setU s)))
-  , ("v",      jarr (pcoeffs (setV s)))
-  , ("rho",    jstr (show (setRho s)))
-  , ("M",      jstr (show (setM s)))
-  , ("h0",     jstr (show (setH0 s)))
-  , ("H",      jarr (pcoeffs (setBigH s)))
-  , ("W",      jarr (pcoeffs (setW s)))
-  , ("g",      jarr (pcoeffs (setG s)))
-  , ("degG",   jstr (show (deg (setG s))))
-  , ("digitsG", jstr (show (digitsOf (setG s))))
-  , ("f",      jarr (pcoeffs (setF s)))
-  , ("checks", jchecks (checks s))
-  , ("roots",  jroots s)
+-- | The whole answer: one entry in @setups@ per factor, and every root tagged
+-- with the setup that serves it.
+ok :: Poly -> String -> [Setup] -> String
+ok f src ss = obj
+  [ ("ok",          "true")
+  , ("degenerate",  "false")
+  , ("f",           jarr (pcoeffs f))
+  , ("hSource",     jstr src)
+  , ("hIrreducible", if src == "factored" then "true" else "false")
+  , ("setups",      "[" ++ intercalate "," (map jsetup ss) ++ "]")
+  , ("roots",       jroots f ss)
   ]
 
--- | Every root of `f`, with the matching critical point `β = α / M`, and the
--- closed form when the degree allows one. The radical branch is matched to the
--- numeric root rather than assumed from branch order.
-jroots :: Setup -> String
-jroots s = "[" ++ intercalate "," (map one rs) ++ "]"
+jsetup :: Setup -> String
+jsetup s = obj
+  [ ("h",       jarr (pcoeffs (setH s)))
+  , ("u",       jarr (pcoeffs (setU s)))
+  , ("v",       jarr (pcoeffs (setV s)))
+  , ("rho",     jstr (show (setRho s)))
+  , ("M",       jstr (show (setM s)))
+  , ("h0",      jstr (show (setH0 s)))
+  , ("H",       jarr (pcoeffs (setBigH s)))
+  , ("W",       jarr (pcoeffs (setW s)))
+  , ("g",       jarr (pcoeffs (setG s)))
+  , ("degG",    jstr (show (deg (setG s))))
+  , ("digitsG", jstr (show (digitsOf (setG s))))
+  , ("checks",  jchecks (checks s))
+  ]
+
+-- | Every root of @f@, matched to the setup whose @h@ vanishes there — so a
+-- reducible @f@ gets a different @g@ per factor, and @β = α/M@ uses that
+-- factor's own @M@. The match is numeric because the roots are; the winner
+-- beats the others by orders of magnitude in practice.
+jroots :: Poly -> [Setup] -> String
+jroots f ss = "[" ++ intercalate "," (map one (roots f)) ++ "]"
   where
-    f    = setF s
-    m    = fromInteger (setM s) :: Double
-    rs   = roots f
-    brs  = radicals f
+    brs = radicals f
     one a = obj
       [ ("alpha", jstr (showComplex 7 a))
-      , ("beta",  jstr (showComplex 7 (a / (m :+ 0))))
+      , ("beta",  jstr (showComplex 7 (a / (mOf a :+ 0))))
+      , ("setup", jstr (show (idxOf a)))
       , ("rad",   maybe "null" (jstr . brLatex . nearest a) brs)
       ]
+    idxOf a = snd (minimumBy (comparing fst)
+                [ (magnitude (evalC (setH s) a), i) | (i, s) <- zip [(0 :: Int) ..] ss ])
+    mOf a   = fromInteger (setM (ss !! idxOf a)) :: Double
     nearest a = minimumBy (comparing (\b -> magnitude (brValue b - a)))
+
+evalC :: Poly -> Complex Double -> Complex Double
+evalC p z = foldr (\c acc -> acc * z + (fromInteger c :+ 0)) 0 (coeffs p)
 
 digitsOf :: Poly -> Int
 digitsOf p | isZero p  = 1

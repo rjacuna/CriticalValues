@@ -46,6 +46,42 @@ const wasmBackend = {
   },
 };
 
+// FLINT, compiled to wasm by Emscripten. Separate module, separate memory: the
+// boundary is decimal strings, one round trip per factorisation, which is why
+// the split costs nothing. `?dev` skips it — the construction then runs on the
+// squarefree part, which still satisfies both divisibilities but makes H
+// irreducible only when f already is.
+let flint = null;
+export async function loadFlint() {
+  if (new URLSearchParams(location.search).has("dev")) return null;
+  if (flint !== null) return flint || null;
+  try {
+    const head = await fetch("./flint.wasm", { method: "HEAD" });
+    if (!head.ok) { flint = false; return null; }
+    const { default: createFlintModule } = await import("../flint.mjs");
+    const m = await createFlintModule();
+    flint = {
+      // coefficients (decimal strings, low to high) -> irreducible factors
+      factor(coeffs) {
+        const inPtr = m.stringToNewUTF8(`${coeffs.length}  ${coeffs.join(" ")}`);
+        const outPtr = m.ccall("crit_flint_factor", "number", ["number"], [inPtr]);
+        m._free(inPtr);
+        if (!outPtr) return [];
+        const s = m.UTF8ToString(outPtr);
+        m.ccall("crit_flint_free", null, ["number"], [outPtr]);
+        const out = [];
+        for (const line of s.split("\n")) {
+          const w = line.trim().split(/\s+/).filter(Boolean);
+          if (!w.length || w[0] === "c") continue;
+          out.push(w.slice(2));          // drop exponent and length
+        }
+        return out;
+      },
+    };
+    return flint;
+  } catch { flint = false; return null; }
+}
+
 // Prefer wasm when the module is present; fall back to the dev server.
 // ?backend=server or ?backend=wasm forces one.
 export async function pickBackend() {
