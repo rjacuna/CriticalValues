@@ -41,6 +41,23 @@
   .wrapmath { display: flex; flex-wrap: wrap; align-items: baseline;
               column-gap: .35rem; row-gap: .2rem; }
   .wrapmath > span { white-space: nowrap; }
+  /* A coefficient runs to hundreds of digits, and it is one term, so it cannot
+     wrap where terms wrap. Soft hyphens between its digits let the line break
+     wherever it must; the break is drawn as a right-pointing triangle so a
+     split number is never misread as two numbers. */
+  .wrapmath > span.wrapdigits,
+  .wrapmath > span.wrapdigits .katex,
+  .wrapmath > span.wrapdigits .katex-html,
+  .wrapmath > span.wrapdigits .base { white-space: normal; }
+  /* KaTeX sizes .base with width:min-content and display:inline-block, which
+     shrink-wraps the digits to their full 3000px and never breaks. */
+  .wrapmath > span.wrapdigits .katex-html,
+  .wrapmath > span.wrapdigits .base { display: inline; width: auto; }
+  .wrapmath > span.wrapdigits .mord {
+    -webkit-hyphenate-character: "\25B8";
+    hyphenate-character: "\25B8";
+    hyphens: manual;
+  }
   .mono { font-family: var(--bs-font-monospace); font-size: .8rem; }
 
   /* Small screens: the panels stack, and a compact bar keeps the chosen root
