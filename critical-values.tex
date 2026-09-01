@@ -574,29 +574,21 @@ Each line below is a closed identity, checkable by expansion.
 \end{example}
 
 \begin{example}[Dedekind's cubic]\label{Ex85}
-  $f = X^{3} - X^{2} - 2X - 8$ is the standard example of a field whose ring of
-  integers is not monogenic: $2$ is a common index divisor \cite{dedekind1878}.
-  The construction runs unchanged, which is the point of including it --- no
-  step of \S\ref{Scons}--\S\ref{Sdesc} is sensitive to monogenicity.
-
-  It is also where formalization corrected the author. An earlier draft of this
-  material asserted $M = 4024$ here. That is unattainable. Since $M = \rho h_{0}$
-  and $h_{0} = -8$, it would need $\rho = -503$, the discriminant of the field;
-  but every B\'ezout constant for this $h$ is even. Writing
-  $h = X^{2}(X-1) - 2(X+4)$ and $h' = 3X^{2} - 2(X+1)$ puts any relation
-  $uh + vh' = c$ into the shape
+  $f = X^{3} - X^{2} - 2X - 8$, the standard example of a field whose ring of
+  integers is not monogenic: $2$ is a common index divisor
+  \cite{dedekind1878}. With $u = 21X - 125$, $v = -7X^{2} + 44X - 3$,
+  $\rho = 1006$, $h_{0} = -8$, $M = -8048$,
   \[
-    X^{2}\bigl(u(X-1) + 3v\bigr) \;=\; c + 2\bigl(u(X+4) + v(X+1)\bigr),
+    H = 65158925824X^{3} + 8096288X^{2} - 2012X + 1, \qquad
+    W = -194310912X^{3} + 426544X^{2} + 358X,
   \]
-  and reading off the constant coefficient gives $0 = c + 2\bigl(u(X+4) +
-  v(X+1)\bigr)(0)$, so $2 \mid c$. In fact $(h,h') \cap \Z = (1006)$, with
-  certificate
   \[
-    (125 - 21X)\,h + (3 - 44X + 7X^{2})\,h' = -1006 ,
+    \begin{aligned}
+      g = {}& 101288722414414331904X^{6} - 209759614012620800X^{5} \\
+            & {} - 217370176548864X^{4} - 14767629312X^{3}
+                 + 2350016X^{2} - 10912X .
+    \end{aligned}
   \]
-  so the smallest attainable $|M|$ is $8048$. The relevant invariant is the
-  reduced resultant, not $\operatorname{disc}(K) = -503$; here
-  $\operatorname{disc}(h) = -2012$ and the index is $2$.
 \end{example}
 
 \section{Formalization}\label{Sformal}
@@ -632,9 +624,6 @@ Mathlib for \texttt{eval} rather than for \texttt{comp}, and has to be
 transported. And Mathlib has the translation $X \mapsto X + c$ as an algebra
 equivalence but not the dilation $X \mapsto cX$, which had to be built to prove
 Lemma \ref{LD}.
-
-The one place where the formalization changed the mathematics is Example
-\ref{Ex85}, whose erratum is itself machine-checked.
 
 \section{Computation}\label{Scomp}
 
