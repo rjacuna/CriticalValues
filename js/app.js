@@ -263,13 +263,28 @@ addEventListener("DOMContentLoaded", async () => {
   $$(".ex").forEach((b) => b.addEventListener("click", () => {
     $("#finput").value = b.dataset.f; compute();
   }));
-  $("#opendesmos").addEventListener("click", async (e) => {
-    const b = e.currentTarget;
+  // Desmos cannot be handed a graph by link, so the expressions travel by
+  // clipboard and the user has to paste once. Saying so is the whole feature —
+  // a tab that opens onto an empty calculator just looks broken.
+  $("#opendesmos").addEventListener("click", async () => {
     const d = JSON.parse($("#col-graph").dataset.payload || "{}");
-    const old = b.textContent;
-    try { await openInDesmos(d); b.textContent = "Copied — paste there"; }
-    catch { b.textContent = "Opened — copy below"; }
-    setTimeout(() => { b.textContent = old; }, 2400);
+    const { copied, opened, text } = await openInDesmos(d);
+    const box = $("#desmos-handoff"), pre = $("#handoff-exprs");
+    box.classList.remove("d-none");
+    // show the text whenever the hand-off did not fully work: a blocked popup
+    // leaves the message pointing at expressions that have to be there
+    const needText = !copied || !opened;
+    pre.classList.toggle("d-none", !needText);
+    if (needText) pre.textContent = text;
+    $("#handoff-msg").innerHTML = !opened
+      ? "The new tab was blocked. Allow pop-ups for this page, or open "
+        + '<a href="https://www.desmos.com/calculator" target="_blank" rel="noopener">'
+        + "desmos.com/calculator</a> yourself and paste the expressions below."
+      : copied
+      ? "<strong>Copied.</strong> In the Desmos tab that just opened, click the "
+        + "expression list and paste (⌘V / Ctrl+V) — it becomes one row per line. "
+        + "Desmos has no way to receive a graph by link, so this is the hand-off."
+      : "The clipboard was refused. Copy these into the Desmos tab that just opened:";
   });
 
   for (const id of ["#copyg", "#copygp", "#copyb", "#copydesmos"]) {
