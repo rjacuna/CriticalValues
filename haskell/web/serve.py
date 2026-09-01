@@ -98,6 +98,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(out)
 
+    def end_headers(self):
+        # A dev server that lets the browser cache is a trap: crit.wasm and the
+        # JS are rewritten by every rebuild, and a stale copy does not look like
+        # a stale copy -- it looks like a bug in the mathematics.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        super().end_headers()
+
     def log_message(self, fmt, *args):
         if self.command == "POST":
             super().log_message(fmt, *args)
