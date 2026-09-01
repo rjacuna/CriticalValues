@@ -21,6 +21,7 @@ module WebCore (run) where
 
 import Data.Complex (Complex(..), magnitude, realPart, imagPart)
 import Data.List (intercalate, minimumBy)
+import Data.Maybe (isJust)
 import Data.Ord (comparing)
 import Poly
 import Expr (evalExpr)
@@ -54,16 +55,32 @@ splitOn c s = case break (== c) s of
   (w, _ : r)   -> trim w : splitOn c r
   where trim = dropWhile (== ' ')
 
+-- | One factor\'s answer.  §2 needs @h(0) ≠ 0@, so the factor @X@ — the one
+-- carrying the root @α = 0@ — cannot have a `Setup`; §6 serves it with
+-- @g = X²@, @H = X@ instead.  Holding both in one list is what lets a single
+-- @f@ have some of its roots served by the construction and @0@ by §6.
+data Entry = Reg Setup | Deg Poly
+
+entH :: Entry -> Poly
+entH (Reg s) = setH s
+entH (Deg _) = xP
+
+entM :: Entry -> Integer
+entM (Reg s) = setM s
+entM (Deg _) = 1
+
+entG :: Entry -> Poly
+entG (Reg s) = setG s
+entG (Deg _) = pow xP 2
+
 run :: String -> String
 run input =
   case parseInput input of
     Left e -> err e
     Right (f, _) | isZero f || deg f < 1 -> err "f must be nonconstant"
-    Right (f, hs)
-      | coeff f 0 == 0 -> degenerate f
-      | otherwise      -> build f hs
+    Right (f, hs)                        -> build f hs
 
--- | One `Setup` per usable factor.
+-- | One entry per usable factor.
 --
 --   * factors supplied — they came from a factoriser, so each `H` really is
 --     irreducible and a *different* `g` serves each factor of a reducible `f`;
@@ -71,39 +88,57 @@ run input =
 --     §4 never use irreducibility, so both divisibilities hold and one `g`
 --     covers every root. But `H` is then only irreducible when `f` is, which
 --     the output says out loud rather than leaving implied.
+--
+-- @X ∣ f@ contributes §6 *alongside* the rest rather than replacing it: for
+-- @f = x(x+1)@ the root @-1@ still gets the construction and @0@ gets @X²@.
 build :: Poly -> [Poly] -> String
 build f hs =
-  case setups of
-    [] -> err "f has no usable factor with nonzero constant term"
-    ss -> ok f (if null usable then "squarefree" else "factored") ss
+  case entries of
+    [] -> err "f has no usable factor"
+    es -> ok f src es
   where
-    usable  = [ h | h <- hs, deg h >= 1, coeff h 0 /= 0 ]
-    chosen  = if null usable then either (const []) (: []) (fmap setH (setupExists SquareFree f))
-                             else usable
-    setups  = [ s | h <- chosen, Right s <- [setupOfFactor f h] ]
-
--- | §6. @X ∣ f@ needs no construction at all.
-degenerate :: Poly -> String
-degenerate _ = obj
-  [ ("ok", "true"), ("degenerate", "true")
-  , ("g", jarr (pcoeffs (pow xP 2))), ("H", jarr (pcoeffs xP))
-  , ("checks", "[]") ]
+    factored = not (null [ h | h <- hs, deg h >= 1 ])
+    src      = if factored then "factored" else "squarefree"
+    supplied = [ h | h <- hs, deg h >= 1, coeff h 0 /= 0 ]
+    chosen   = if factored
+                 then supplied
+                 else either (const []) (: []) (fmap setH (setupExists SquareFree f))
+    regs     = [ Reg s | h <- chosen, Right s <- [setupOfFactor f h] ]
+    entries  = regs ++ [ Deg f | isJust (exactDiv f xP) ]
 
 -- | The whole answer: one entry in @setups@ per factor, and every root tagged
 -- with the setup that serves it.
-ok :: Poly -> String -> [Setup] -> String
+ok :: Poly -> String -> [Entry] -> String
 ok f src ss = obj
   [ ("ok",          "true")
   , ("degenerate",  "false")
   , ("f",           jarr (pcoeffs f))
   , ("hSource",     jstr src)
   , ("hIrreducible", if src == "factored" then "true" else "false")
-  , ("setups",      "[" ++ intercalate "," (map jsetup ss) ++ "]")
+  , ("setups",      "[" ++ intercalate "," (map jentry ss) ++ "]")
   , ("roots",       jroots f ss)
   ]
 
-jsetup :: Setup -> String
-jsetup s = let plot = plotOf s in obj
+jentry :: Entry -> String
+jentry (Deg f) = let g = pow xP 2; plot = plotOf g in obj
+  [ ("h",        jarr (pcoeffs xP))
+  , ("u",        jarr []), ("v", jarr [])
+  , ("rho",      jstr "1")
+  , ("M",        jstr "1")
+  , ("h0",       jstr "0")
+  , ("H",        jarr (pcoeffs xP))
+  , ("W",        jarr [])
+  , ("g",        jarr (pcoeffs g))
+  , ("gp",       jarr (pcoeffs (derivative g)))
+  , ("crit",     jcrit (critPoints g))
+  , ("plot",     either (const "null") jplot plot)
+  , ("plotNote", either jstr (const "null") plot)
+  , ("degG",     jstr (show (deg g)))
+  , ("digitsG",  jstr (show (digitsOf g)))
+  , ("sixth",    "true")
+  , ("checks",   jchecks (checksX f))
+  ]
+jentry (Reg s) = let plot = plotOf (setG s) in obj
   [ ("h",       jarr (pcoeffs (setH s)))
   , ("u",       jarr (pcoeffs (setU s)))
   , ("v",       jarr (pcoeffs (setV s)))
@@ -114,7 +149,7 @@ jsetup s = let plot = plotOf s in obj
   , ("W",       jarr (pcoeffs (setW s)))
   , ("g",       jarr (pcoeffs (setG s)))
   , ("gp",      jarr (pcoeffs (derivative (setG s))))
-  , ("crit",    jcrit (critPoints s))
+  , ("crit",    jcrit (critPoints (setG s)))
   , ("plot",    either (const "null") jplot plot)
   , ("plotNote", either jstr (const "null") plot)
   , ("degG",    jstr (show (deg (setG s))))
@@ -133,21 +168,21 @@ jsetup s = let plot = plotOf s in obj
 -- @(x−1)(x²+x+2)(x+2)@, whose roots deserve @x = 1@, the quadratic formula, and
 -- @x = −2@ respectively. It also means a degree-6 @f@ splitting into two cubics
 -- gets Cardano twice rather than nothing at all.
-jroots :: Poly -> [Setup] -> String
+jroots :: Poly -> [Entry] -> String
 jroots f ss = "[" ++ intercalate "," (map one (roots f)) ++ "]"
   where
     -- one radical table per factor, not per root
-    brss = [ radicals (setH s) | s <- ss ]
+    brss = [ radicals (entH e) | e <- ss ]
     one a = obj
       [ ("alpha",  jstr (showComplex 7 a))
-      , ("beta",   jstr (showComplex 7 (a / (fromInteger (setM (ss !! i)) :+ 0))))
+      , ("beta",   jstr (showComplex 7 (a / (fromInteger (entM (ss !! i)) :+ 0))))
       , ("setup",  jstr (show i))
-      , ("degree", jstr (show (deg (setH (ss !! i)))))
+      , ("degree", jstr (show (deg (entH (ss !! i)))))
       , ("rad",    maybe "null" (jstr . brLatex . nearest a) (brss !! i))
       ]
       where i = idxOf a
     idxOf a = snd (minimumBy (comparing fst)
-                [ (magnitude (evalC (setH s) a), i) | (i, s) <- zip [(0 :: Int) ..] ss ])
+                [ (magnitude (evalC (entH e) a), i) | (i, e) <- zip [(0 :: Int) ..] ss ])
     nearest a = minimumBy (comparing (\b -> magnitude (brValue b - a)))
 
 -- | The real critical points of @g@: the real roots of @g\'@, each with the
@@ -157,10 +192,10 @@ jroots f ss = "[" ++ intercalate "," (map one (roots f)) ++ "]"
 -- Real means real: a root is kept when its imaginary part is negligible beside
 -- its own size, and clustered duplicates (@g\'@ can have repeated roots) are
 -- collapsed, so a double critical point is drawn once.
-critPoints :: Setup -> [(Double, Double)]
-critPoints s = dedupe
-  [ (b, realPart (evalC (setG s) (b :+ 0)))
-  | z <- roots (derivative (setG s))
+critPoints :: Poly -> [(Double, Double)]
+critPoints g0 = dedupe
+  [ (b, realPart (evalC g0 (b :+ 0)))
+  | z <- roots (derivative g0)
   , let b = realPart z
   , abs (imagPart z) <= 1e-9 * max 1 (magnitude z) ]
   where
@@ -186,21 +221,21 @@ critPoints s = dedupe
 -- because it is a viewing choice, not a measurement, and the reader edits it.
 data Plot = Plot Double Double Double Double Integer
 
-plotOf :: Setup -> Either String Plot
-plotOf s
+plotOf :: Poly -> Either String Plot
+plotOf g0
   | null cps  = Left "g has no real critical point"
-  | not fits  = Left (show (digitsOf (setG s)) ++ "-digit coefficients \8212 both \
+  | not fits  = Left (show (digitsOf g0) ++ "-digit coefficients \8212 both \
       \Desmos and GeoGebra evaluate in IEEE-754 doubles, which stop at 1.8\183\
       \10\179\8304\8312 (309 digits), so g would be infinite there")
   | flat      = Left "the window collapses to nothing in double precision"
   | otherwise = Right (Plot xlo xhi ylo yhi k)
     where
-      cps = critPoints s
+      cps = critPoints g0
       c0  = case cps of { (c : _) -> c ; [] -> (0, 0) }
       -- A coefficient past DBL_MAX is Infinity in either calculator and the
       -- curve never appears. Not a rare edge: deg g = 2 deg h and the
       -- coefficients grow with M, so a degree-10 f already reaches 376 digits.
-      fits = all fin (coeffs (setG s)) && all fin (coeffs gp)
+      fits = all fin (coeffs g0) && all fin (coeffs gp)
       fin c = not (isInfinite (fromInteger c :: Double))
       flat = xhi <= xlo || yhi <= ylo || isNaN (xhi - xlo) || isNaN (yhi - ylo)
       bs = map fst cps
@@ -208,12 +243,12 @@ plotOf s
       x0 = minimum bs;      x1 = maximum bs
       y0 = minimum (0 : as); y1 = maximum (0 : as)
       padx | x1 > x0   = 0.25 * (x1 - x0)
-           | otherwise = halfWidth s c0
+           | otherwise = halfWidth g0 c0
       pady | y1 > y0   = 0.25 * (y1 - y0)
            | otherwise = max 1 (abs (snd c0))
       xlo = x0 - padx; xhi = x1 + padx
       ylo = y0 - pady; yhi = y1 + pady
-      gp  = derivative (setG s)
+      gp  = derivative g0
       -- over the span of the critical points, not the padded window: @g'@ is a
       -- high-degree polynomial and its largest values in frame are always out
       -- at the edges, so scaling by those would flatten every interior zero —
@@ -229,11 +264,11 @@ plotOf s
       k   = max 1 (round (m / max 1e-300 ((yhi - ylo) / 2)))
 
 -- | Half the width over which @g@ rises by @max(1,|α|)@ above a critical point.
-halfWidth :: Setup -> (Double, Double) -> Double
-halfWidth s (b, a)
+halfWidth :: Poly -> (Double, Double) -> Double
+halfWidth g0 (b, a)
   | h2 <= 0 || isNaN h2 || isInfinite h2 = 1
   | otherwise = sqrt (2 * max 1 (abs a) / h2)
-  where h2 = abs (realPart (evalC (derivative (derivative (setG s))) (b :+ 0)))
+  where h2 = abs (realPart (evalC (derivative (derivative g0)) (b :+ 0)))
 
 jplot :: Plot -> String
 jplot (Plot a b c d k) = obj

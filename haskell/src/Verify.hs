@@ -4,7 +4,7 @@
 -- This is @CriticalValues/Ledger.lean@ in program form.  Every entry is a
 -- hypothesis the Lean proof assumes or a theorem it proves; if the program is
 -- right, all of them hold for every input.
-module Verify (Check(..), checks, allOk, report) where
+module Verify (Check(..), checks, checksX, allOk, report) where
 
 import Data.Maybe (isJust)
 import Poly
@@ -47,6 +47,22 @@ checks s =
     u    = setU s;    v  = setV s
     rho  = setRho s;  m  = setM s;   h0 = setH0 s
     bigH = setBigH s; w  = setW s;   g  = setG s
+
+-- | The degenerate case, spec §6: when @X ∣ f@ the pair @g = X²@, @H = X@
+-- settles Theorem 1 outright, and it is what serves the root @α = 0@.  There is
+-- no `Setup` here — §2 needs @h(0) ≠ 0@ — so the conclusions are checked
+-- directly.
+checksX :: Poly -> [Check]
+checksX f =
+  [ Check "§6      : X ∣ f"                       (isJust (exactDiv f xP))
+  , Check "Cor C'  : H ∣ g'"                      (isJust (exactDiv (derivative g) xP))
+  , Check "Cor C'  : H² ∣ f∘g"                    (isJust (exactDiv (comp f g) (mul xP xP)))
+  , Check "Lemma E : 2 ≤ deg g"                   (deg g >= 2)
+  , Check "Lemma E : g' ≠ 0"                      (not (isZero (derivative g)))
+  , Check "Lemma D : deg H = 1"                   (deg xP == 1)
+  , Check "        : H is primitive"              (content xP == 1)
+  ]
+  where g = pow xP 2
 
 allOk :: [Check] -> Bool
 allOk = all checkOk
