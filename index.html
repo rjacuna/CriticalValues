@@ -66,6 +66,17 @@
   @media (max-width: 991.98px) { #stickysel.on { display: block; } }
 
   .chk { font-size: .78rem; font-family: var(--bs-font-monospace); }
+
+  /* The default disclosure marker is a right-pointing triangle, which is what
+     a wrapped coefficient uses to say "continues" -- one glyph cannot mean
+     both. A plus/minus cannot be confused with a continuation. */
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before {
+    content: "+"; display: inline-block; width: 1em;
+    font-family: var(--bs-font-monospace); font-weight: 700;
+  }
+  details[open] > summary::before { content: "\2212"; }
   .card { border-radius: .75rem; }
 </style>
 </head>
