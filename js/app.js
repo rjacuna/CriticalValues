@@ -268,6 +268,7 @@ async function compute() {
 
 // ---------------------------------------------------------------- wiring
 addEventListener("DOMContentLoaded", async () => {
+  $$("[data-tex]").forEach((el) => tex(el, el.dataset.tex));
   backend = await pickBackend();
   const badge = $("#backend-badge");
   badge.textContent = backend.name === "wasm" ? "wasm" : "server";

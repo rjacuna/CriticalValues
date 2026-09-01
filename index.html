@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>Critical values of integer polynomials</title>
+<title>Every algebraic number is a critical value of an integer polynomial</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -57,11 +57,16 @@
 <div class="container-xxl py-3 py-lg-4">
 
   <header class="mb-3">
-    <h1 class="h4 mb-1">Critical values of integer polynomials</h1>
+    <h1 class="h4 mb-1">Every algebraic number is a critical value of an integer polynomial</h1>
+    <!-- data-tex spans are typeset by KaTeX at load; prose stays prose -->
     <p class="text-body-secondary small mb-0">
-      For <span id="hdr-f">f ∈ ℤ[x]</span> find <em>g</em> and irreducible <em>H</em> with
-      <em>H</em> ∣ <em>g</em>′ and <em>H</em>² ∣ <em>f</em> ∘ <em>g</em>. Every root of
-      <em>f</em> is a critical value of <em>g</em>, at <em>β</em> = <em>α</em>/<em>M</em>.
+      For <span data-tex="f \in \mathbb{Z}[x]"></span> and for each irreducible factor
+      <span data-tex="h"></span> of <span data-tex="f"></span> we find
+      <span data-tex="g"></span> and irreducible <span data-tex="H"></span> with
+      <span data-tex="H \mid g'"></span> and <span data-tex="H^{2} \mid f \circ g"></span>.
+      Therefore every root <span data-tex="\alpha"></span> of <span data-tex="f"></span>
+      is a critical value of <span data-tex="g_{h}"></span>, at
+      <span data-tex="\beta = \alpha/M"></span>.
     </p>
   </header>
 
