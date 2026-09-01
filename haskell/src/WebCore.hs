@@ -103,7 +103,7 @@ ok f src ss = obj
   ]
 
 jsetup :: Setup -> String
-jsetup s = obj
+jsetup s = let plot = plotOf s in obj
   [ ("h",       jarr (pcoeffs (setH s)))
   , ("u",       jarr (pcoeffs (setU s)))
   , ("v",       jarr (pcoeffs (setV s)))
@@ -115,7 +115,8 @@ jsetup s = obj
   , ("g",       jarr (pcoeffs (setG s)))
   , ("gp",      jarr (pcoeffs (derivative (setG s))))
   , ("crit",    jcrit (critPoints s))
-  , ("plot",    maybe "null" jplot (plotOf s))
+  , ("plot",    either (const "null") jplot plot)
+  , ("plotNote", either jstr (const "null") plot)
   , ("degG",    jstr (show (deg (setG s))))
   , ("digitsG", jstr (show (digitsOf (setG s))))
   , ("checks",  jchecks (checks s))
@@ -185,11 +186,23 @@ critPoints s = dedupe
 -- because it is a viewing choice, not a measurement, and the reader edits it.
 data Plot = Plot Double Double Double Double Integer
 
-plotOf :: Setup -> Maybe Plot
-plotOf s = case critPoints s of
-  []            -> Nothing
-  cps@(c0 : _)  -> Just (Plot xlo xhi ylo yhi k)
+plotOf :: Setup -> Either String Plot
+plotOf s
+  | null cps  = Left "g has no real critical point"
+  | not fits  = Left (show (digitsOf (setG s)) ++ "-digit coefficients \8212 both \
+      \Desmos and GeoGebra evaluate in IEEE-754 doubles, which stop at 1.8\183\
+      \10\179\8304\8312 (309 digits), so g would be infinite there")
+  | flat      = Left "the window collapses to nothing in double precision"
+  | otherwise = Right (Plot xlo xhi ylo yhi k)
     where
+      cps = critPoints s
+      c0  = case cps of { (c : _) -> c ; [] -> (0, 0) }
+      -- A coefficient past DBL_MAX is Infinity in either calculator and the
+      -- curve never appears. Not a rare edge: deg g = 2 deg h and the
+      -- coefficients grow with M, so a degree-10 f already reaches 376 digits.
+      fits = all fin (coeffs (setG s)) && all fin (coeffs gp)
+      fin c = not (isInfinite (fromInteger c :: Double))
+      flat = xhi <= xlo || yhi <= ylo || isNaN (xhi - xlo) || isNaN (yhi - ylo)
       bs = map fst cps
       as = map snd cps
       x0 = minimum bs;      x1 = maximum bs
