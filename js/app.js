@@ -84,11 +84,16 @@ function select(i) {
   $("#bnote").innerHTML = "";
   tex($("#bnote"), `\\beta = \\alpha / M \\text{ — the construction always rescales}`);
 
-  // real roots only: a complex β is not a point on a real plot
+  // real roots only: a complex β is not a point on a real plot. And only when
+  // the Haskell found a window — past DBL_MAX both calculators draw nothing, so
+  // offering the check would mean handing over a blank grid.
   const isReal = !r.alpha.includes("i") && !d.degenerate;
+  const canPlot = isReal && !!s.plot;
   const panel = $("#col-graph");
-  panel.classList.toggle("d-none", !isReal);
-  if (isReal) {
+  panel.classList.toggle("d-none", !canPlot);
+  $("#plotnote").classList.toggle("d-none", !(isReal && s.plotNote));
+  if (isReal && s.plotNote) $("#plotnote").textContent = `No visual check: ${s.plotNote}.`;
+  if (canPlot) {
     const payload = {
       gLatex: polyTex(s.g), gpLatex: polyTex(s.gp || ["0"]),
       alpha: r.alpha, beta: r.beta, crit: s.crit || [], plot: s.plot,
