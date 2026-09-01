@@ -8,3 +8,4 @@ wasm/build/
 wasm/*.wasm
 wasm/flint.mjs
 wasm/crit.js
+__pycache__/
