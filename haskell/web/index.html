@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Critical values of integer polynomials</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous">
+
+<style>
+  /* Touch first: no hover-only affordances, no 300ms tap delay, 44px targets. */
+  html { -webkit-text-size-adjust: 100%; }
+  body { touch-action: manipulation; padding-bottom: env(safe-area-inset-bottom); }
+  .tap { min-height: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+  .root-item { cursor: pointer; user-select: none; transition: background-color .12s; }
+  .root-item.pressed { background-color: var(--bs-secondary-bg); }   /* pointerdown, not hover */
+  /* NB: not `.active` — Bootstrap's .list-group-item.active forces white text,
+     which is invisible against a subtle background. */
+  .root-item.sel      { background-color: var(--bs-primary-bg-subtle);
+                        color: var(--bs-emphasis-color);
+                        border-left: 3px solid var(--bs-primary); }
+  @media (hover: hover) { .root-item:hover { background-color: var(--bs-tertiary-bg); } }
+
+  .katex { font-size: 1em; }
+  .scrollx { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bigpoly { max-height: 40vh; overflow: auto; overflow-wrap: anywhere; }
+  .mono { font-family: var(--bs-font-monospace); font-size: .8rem; }
+
+  /* Small screens: the panels stack, and a compact bar keeps the chosen root
+     visible once the roots list has scrolled away. */
+  #stickysel { position: sticky; top: 0; z-index: 5; display: none; }
+  @media (max-width: 991.98px) { #stickysel.on { display: block; } }
+
+  .chk { font-size: .78rem; font-family: var(--bs-font-monospace); }
+  .card { border-radius: .75rem; }
+</style>
+</head>
+<body class="bg-body-tertiary">
+
+<div class="container-xxl py-3 py-lg-4">
+
+  <header class="mb-3">
+    <h1 class="h4 mb-1">Critical values of integer polynomials</h1>
+    <p class="text-body-secondary small mb-0">
+      For <span id="hdr-f">f ∈ ℤ[X]</span> find <em>g</em> and irreducible <em>H</em> with
+      <em>H</em> ∣ <em>g</em>′ and <em>H</em>² ∣ <em>f</em> ∘ <em>g</em>. Every root of
+      <em>f</em> is a critical value of <em>g</em>, at <em>β</em> = <em>α</em>/<em>M</em>.
+    </p>
+  </header>
+
+  <form id="form" class="mb-3">
+    <div class="input-group input-group-lg">
+      <input id="finput" class="form-control tap" spellcheck="false"
+             autocapitalize="off" autocomplete="off" autocorrect="off"
+             inputmode="text" value="x^3 - 2"
+             aria-label="the polynomial f, as x^3-2 or as coefficients low to high">
+      <button id="go" class="btn btn-primary tap px-4" type="submit">Compute</button>
+    </div>
+    <div class="form-text d-flex flex-wrap gap-2 align-items-center mt-2">
+      <span>e.g.</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ex tap" data-f="x^2 + 1">x²+1</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary ex tap" data-f="x^3 - 2">x³−2</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary ex tap" data-f="x^3 - x - 1">x³−x−1</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary ex tap" data-f="x^4 - 10x^2 + 1">x⁴−10x²+1</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary ex tap" data-f="x^3 - x^2 - 2x - 8">Dedekind</button>
+      <span class="ms-auto badge text-bg-secondary" id="backend-badge">…</span>
+    </div>
+  </form>
+
+  <div id="alert" class="alert alert-danger d-none" role="alert"></div>
+
+  <div id="busy" class="d-none align-items-center gap-2 my-4">
+    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+    <span class="text-body-secondary" id="busytext">working…</span>
+  </div>
+
+  <!-- kept visible on small screens once the root list scrolls away -->
+  <div id="stickysel" class="py-2 bg-body-tertiary border-bottom mb-2">
+    <div class="small text-body-secondary">selected root</div>
+    <div id="stickysel-val" class="scrollx"></div>
+  </div>
+
+  <div id="results" class="row g-3 d-none">
+
+    <!-- LEFT: roots, and the closed form for the selected one -->
+    <div class="col-12 col-lg-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 fw-semibold">Roots of <em>f</em> in ℂ</div>
+        <div id="rootlist" class="list-group list-group-flush" role="listbox"
+             aria-label="roots of f"></div>
+        <div class="card-body border-top pt-2">
+          <div class="small text-body-secondary mb-1">Closed form</div>
+          <div id="rootexpr" class="scrollx small text-body-secondary">
+            select a root
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE: g -->
+    <div class="col-12 col-lg-4" id="col-g">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 d-flex align-items-center">
+          <span class="fw-semibold"><em>g</em></span>
+          <span id="gmeta" class="ms-2 small text-body-secondary"></span>
+          <button id="copyg" class="btn btn-sm btn-outline-secondary ms-auto tap"
+                  type="button" data-copy="">Copy</button>
+        </div>
+        <div class="card-body">
+          <div id="gout" class="scrollx bigpoly"></div>
+          <hr class="my-2">
+          <div class="small text-body-secondary" id="setupmeta"></div>
+          <details class="mt-2">
+            <summary class="small tap">verification</summary>
+            <div id="checks" class="mt-2"></div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: beta -->
+    <div class="col-12 col-lg-4" id="col-b">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 d-flex align-items-center">
+          <span class="fw-semibold"><em>β</em></span>
+          <span class="ms-2 small text-body-secondary">critical point</span>
+          <button id="copyb" class="btn btn-sm btn-outline-secondary ms-auto tap"
+                  type="button" data-copy="">Copy</button>
+        </div>
+        <div class="card-body">
+          <div id="bout" class="scrollx">select a root</div>
+          <hr class="my-2">
+          <div class="small text-body-secondary mb-1">Closed form</div>
+          <div id="bexpr" class="scrollx small text-body-secondary">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-body-secondary small mt-4">
+    The construction and all 22 checks are Haskell, compiled — never reimplemented
+    in JavaScript. Coefficients cross every boundary as decimal strings, never as
+    JavaScript numbers: <em>g</em> routinely exceeds 2<sup>53</sup>.
+  </footer>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+        integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+        crossorigin="anonymous"></script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

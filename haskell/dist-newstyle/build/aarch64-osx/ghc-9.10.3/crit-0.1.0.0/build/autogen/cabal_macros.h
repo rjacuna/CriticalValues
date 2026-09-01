@@ -51,16 +51,6 @@
   (major1) == 9 && (major2) <  10 || \
   (major1) == 9 && (major2) == 10 && (minor) <= 3)
 #endif /* MIN_TOOL_VERSION_ghc_pkg */
-/* tool gpp-21.0.0 */
-#ifndef TOOL_VERSION_gpp
-#define TOOL_VERSION_gpp "21.0.0"
-#endif /* TOOL_VERSION_gpp */
-#ifndef MIN_TOOL_VERSION_gpp
-#define MIN_TOOL_VERSION_gpp(major1,major2,minor) (\
-  (major1) <  21 || \
-  (major1) == 21 && (major2) <  0 || \
-  (major1) == 21 && (major2) == 0 && (minor) <= 0)
-#endif /* MIN_TOOL_VERSION_gpp */
 /* tool haddock-2.31.1 */
 #ifndef TOOL_VERSION_haddock
 #define TOOL_VERSION_haddock "2.31.1"

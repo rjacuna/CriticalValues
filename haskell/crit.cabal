@@ -9,7 +9,8 @@ build-type:         Simple
 -- that is what makes the wasm port a `ghc` invocation rather than a project.
 library
     hs-source-dirs:   src
-    exposed-modules:  Poly, QPoly, Bezout, Factor, Construct, Verify, Roots, Radicals
+    exposed-modules:  Poly, QPoly, Bezout, Factor, Construct, Verify, Roots,
+                      Radicals, WebCore
     build-depends:    base >=4 && <5
     default-language: Haskell2010
 
@@ -22,6 +23,15 @@ executable crit
 -- The benchmark is the one place FLINT enters, and it is not part of the
 -- shipped construction. `Flint2` does not build against FLINT 3.4 unpatched;
 -- see flint2-fork/ and cabal.project.
+-- The same handler as a native binary. The dev server pipes to this while the
+-- wasm cross-compiler is unavailable; the browser contract is identical either
+-- way, so swapping back is a one-line change in the front end.
+executable critjson
+    hs-source-dirs:   app
+    main-is:          CritJson.hs
+    build-depends:    base, crit
+    default-language: Haskell2010
+
 executable bench
     hs-source-dirs:   app
     main-is:          Bench.hs
