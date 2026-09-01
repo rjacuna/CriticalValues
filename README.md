@@ -46,6 +46,31 @@ The page now says which case it is: a green badge when the factors came from
 FLINT, an amber one under `?dev` warning that `H` is irreducible only if `f`
 already is.
 
+### The 23rd check
+
+`H is irreducible` is now asked of FLINT and shown beside the other 22. It
+cannot live inside them: `crit.wasm` is `base`-only, and Kronecker would choke
+on `H`'s coefficients. Counting the factors FLINT returns is not arithmetic —
+FLINT does the work.
+
+It is a real check, not a decoration. Run against the squarefree route on
+`(x²+1)(x−3)` it reports **FAIL** while all 22 built-in checks pass, which is
+precisely the defect described above.
+
+### The closed form follows deg(α), not deg(f)
+
+`α`'s minimal polynomial is the factor it belongs to, so that is what the
+expression comes from. `(x³+x−2)(x+2)` factors as `(x−1)(x²+x+2)(x+2)`:
+
+| root | factor | expression |
+|---|---|---|
+| `1` | `x−1` | `x = 1` |
+| `−2` | `x+2` | `x = −2` |
+| `−0.5 ± 1.322876i` | `x²+x+2` | `x = (−1 ± √−7)/2` |
+
+Previously all four got the Ferrari quartic formula. The same change means a
+degree-6 `f` splitting into two cubics gets Cardano twice rather than nothing.
+
 ## Input: mathjs parses, Haskell expands
 
 `(x^3 + x - 2)*(x + 2)` is accepted, and so is `(x+1)^5`. mathjs does the
