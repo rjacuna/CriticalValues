@@ -256,6 +256,69 @@ become inconvenient: cross-compile FLINT 3.x and GMP with **wasi-sdk** to
 one memory, no marshalling, `Flint2` bindings behaving as designed. More work,
 and GMP's configure and assembly are host-specific.
 
+## 5c. Measured
+
+`cabal run bench` — pure-Haskell Kronecker against FLINT 3.4 through the
+patched `Flint2`, on inputs deliberately harder than anything in §8.
+
+```
+  polynomial                deg  #irr   Kronecker     FLINT     speedup
+  Phi_7                       6     1       <0.01     <0.01          1x
+  Phi_11                     10     1      5.0e-2     <0.01        464x
+  X^8 - 2                     8     1       <0.01     <0.01        109x
+  Swinnerton-Dyer S3          8     1        0.84     <0.01       6802x
+  (X-1)...(X-6)               6     6        0.28     <0.01       2321x
+  (X^3-2)(X^3-3)              6     2       <0.01     <0.01        359x
+  X^12 - 1                   12     6     timeout     <0.01     >67568x
+  X^5 - X - 1                 5     1       <0.01     <0.01          3x
+  X^3 - 1000003X + 7          3     1      1.0e-2     <0.01        730x
+  7X^5+1234567X^3-89X+1e5     5     1      4.0e-2     <0.01        710x
+  (X^3-1000003X+7)(X-1)       4     2      2.0e-2     <0.01        122x
+  (X^5-X-1)(X+3)              6     2       <0.01     <0.01         82x
+  (7X^5+..+1e5)(X-2)          6     2        0.59     <0.01       8102x
+```
+
+Kronecker times out (10 s budget) on `X^12 - 1`, a polynomial with six small
+cyclotomic factors — not an adversarial input, just one with enough divisors of
+the sampled values to make the search explode. Swinnerton-Dyer `S3`, the
+classical worst case for *Zassenhaus recombination*, costs Kronecker 0.84 s and
+FLINT nothing, since it is irreducible and FLINT never has to recombine.
+
+All 22 checks of `Verify` pass on all thirteen inputs.
+
+### Output size is governed by `ρ`, as predicted
+
+```
+  polynomial               deg h  digits(rho)  digits(M)  deg g  digits(g)
+  Phi_7                        6            1          1      8          6
+  Swinnerton-Dyer S3           8            8         10     15        144
+  X^3 - 1000003X + 7           3           19         20      6        110
+  7X^5+1234567X^3-89X+1e5      5           43         48     10        460
+```
+
+A 43-digit `ρ` produces coefficients of `g` with 460 digits. Since `ρ` is the
+reduced resultant and therefore already minimal (§2), this is the floor for the
+construction, not an implementation artifact. It is also why `Integer` is not
+optional and why coefficient size, not degree, is the cost driver (§0).
+
+### The choice-of-`h` optimisation did not fire — and why
+
+§4 proposed choosing, among the irreducible factors, the one minimising
+`|M| = |ρ h₀|`. Measured, it never beat taking the first usable factor: on all
+six reducible inputs, first and best agree.
+
+The reason is that FLINT returns factors in ascending degree, so the cheapest
+candidate is already first. The optimisation is not wrong, merely redundant
+against this factoriser — worth keeping as a one-line guard, not worth
+engineering.
+
+There is a more interesting observation buried in it: minimising `|M|` always
+selects a *linear* factor when one exists, giving `deg g = 2` and single-digit
+coefficients. That is optimal by the stated metric and entirely legitimate under
+Theorem 1, but it means the metric answers "cheapest witness", not "witness that
+says something about `f`". If the latter is ever wanted, the metric needs
+rethinking, not the algorithm.
+
 ## 6. Recommended order
 
 0. **Build the FLINT oracle first** (§5b), so every later change is checked

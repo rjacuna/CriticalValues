@@ -1,0 +1,30 @@
+cabal-version:      2.4
+name:               crit
+version:            0.1.0.0
+synopsis:           Critical values of integer polynomials — the construction
+license:            NONE
+build-type:         Simple
+
+-- The construction itself. Deliberately depends on `base` and nothing else:
+-- that is what makes the wasm port a `ghc` invocation rather than a project.
+library
+    hs-source-dirs:   src
+    exposed-modules:  Poly, QPoly, Bezout, Factor, Construct, Verify
+    build-depends:    base >=4 && <5
+    default-language: Haskell2010
+
+executable crit
+    hs-source-dirs:   app
+    main-is:          Main.hs
+    build-depends:    base, crit
+    default-language: Haskell2010
+
+-- The benchmark is the one place FLINT enters, and it is not part of the
+-- shipped construction. `Flint2` does not build against FLINT 3.4 unpatched;
+-- see flint2-fork/ and cabal.project.
+executable bench
+    hs-source-dirs:   app
+    main-is:          Bench.hs
+    other-modules:    FlintBind
+    build-depends:    base, crit, Flint2
+    default-language: Haskell2010

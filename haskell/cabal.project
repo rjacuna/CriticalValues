@@ -1,0 +1,11 @@
+packages: . flint2-fork/Flint2-0.1.0.5
+
+package Flint2
+  extra-include-dirs: /opt/homebrew/include
+  extra-lib-dirs:     /opt/homebrew/lib
+
+package crit
+  extra-include-dirs: /opt/homebrew/include
+  extra-lib-dirs:     /opt/homebrew/lib
+
+allow-newer: all
