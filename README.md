@@ -24,6 +24,39 @@ FLINT supplying an irreducible factor instead, `g` *would* change when the
 selected root belongs to a different factor of a reducible `f`; for irreducible
 `f` it stays fixed either way.
 
+## Input: mathjs parses, Haskell expands
+
+`(x^3 + x - 2)*(x + 2)` is accepted, and so is `(x+1)^5`. mathjs does the
+parsing — that is what a library is for, and its parser is fast and correct at
+13 ms regardless of exponent. It does **not** do the algebra.
+
+Its `rationalize` would expand the product, but it normalises by rewriting to a
+fixed point, rescanning the whole tree against the whole rule set after every
+rewrite:
+
+| | `^2` | `^3` | `^4` | `^5` |
+|---|---|---|---|---|
+| `math.rationalize((x+1)^n)` | 23 ms | 25 ms | 75 ms | **52,981 ms** |
+
+That is a 700× jump for one degree, at 40 MB of heap — CPU-bound in rule
+matching, not a structural blow-up, and not an infinite loop: it does finish.
+
+The AST is therefore serialised to an s-expression and expanded by `src/Expr.hs`
+using the exact arithmetic the project already has:
+
+| | `(x+1)^5` | `(x+1)^200` | `(2x+1)^100·(x³−2)^40` |
+|---|---|---|---|
+| `Expr.evalExpr` | **0.26 ms** | 6.3 ms | 4.4 ms |
+
+Schoolbook convolution, `base` only. FLINT would be asymptotically better and is
+equally unnecessary: at these sizes the cost is coefficient size, not degree
+(`../OPTIMIZATION.md` §0), and putting FLINT inside `crit.wasm` would mean
+cross-compiling FLINT and GMP to `wasm32-wasi` to save four milliseconds.
+
+The expanded `f` is echoed on the page, taken from the **backend's** answer
+rather than recomputed in JavaScript. That matters: the 22 checks cannot catch a
+mis-parse, since they verify the construction for whatever `f` they were handed.
+
 ## No mathematics happens in JavaScript
 
 Every number on the page comes from compiled Haskell. `web/js/` parses the

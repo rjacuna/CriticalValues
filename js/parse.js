@@ -1,52 +1,66 @@
-// Turning what the user typed into integer coefficients.
+// Turning what the user typed into something the backend can evaluate.
 //
-// Uses mathjs rather than a hand-written parser: `rationalize` expands products
-// and powers and hands back the numerator coefficients in increasing exponent
-// order, which is already the order the backend wants.
+// mathjs *parses*; it does not do the algebra. Its parser is excellent — 13 ms
+// whether the input is (x+1)^2 or (x+1)^8 — but `rationalize`, which would
+// expand the product, normalises by rewriting to a fixed point and rescans the
+// whole tree against the whole rule set after every rewrite. Measured:
 //
-//     (x^3 + x - 2)*(x + 2)   ->   [-4, 0, 1, 2, 1]
+//     (x+1)^2   23 ms      (x+1)^4      75 ms
+//     (x+1)^3   25 ms      (x+1)^5   52,981 ms
 //
-// This is the one place where something arithmetic happens outside the compiled
-// Haskell, and it is worth being uneasy about: if the parse were wrong we would
-// construct for the wrong f, and all 22 checks would still pass — they verify
-// the construction for whatever f they were given. So `expandedLatex` is shown
-// back on the page, where a mis-parse is visible rather than silent.
-// mathjs is vendored (vendor/math.js, the self-contained UMD build) and loaded
-// by a plain script tag, so the page works offline and this module is testable
-// under node — the +esm bundle uses root-relative imports that only resolve on
-// the CDN.
+// The same expansion in the Haskell (src/Expr.hs) takes 0.26 ms, and does
+// (x+1)^200 in 6.3 ms. So the AST is serialised to an s-expression and expanded
+// there, with the exact arithmetic the rest of the project already uses. No
+// mathematics happens in this file.
 const M = () => {
   const m = globalThis.math;
   if (!m) throw new Error("mathjs not loaded (vendor/math.js)");
   return m;
 };
 
-const isIntStr = (s) => /^[+-]?\d+$/.test(s);
+const OPS = {
+  add: "+", subtract: "-", multiply: "*", divide: "/",
+  pow: "^", unaryMinus: "-", unaryPlus: "+",
+};
 
-// bigint gcd / lcm, for clearing denominators
-const gcd2 = (a, b) => { a = a < 0n ? -a : a; b = b < 0n ? -b : b;
-  while (b) { [a, b] = [b, a % b]; } return a; };
-
-function toBigIntExact(x) {
-  // mathjs hands back numbers or Fractions depending on the input
-  if (typeof x === "number") {
-    if (!Number.isFinite(x)) throw new Error("coefficient is not finite");
-    if (!Number.isInteger(x)) return { n: null, x };
-    return { n: BigInt(x), d: 1n };
+function sexp(node) {
+  switch (node.type) {
+    case "ConstantNode": {
+      const v = node.value;
+      if (typeof v === "number") {
+        if (!Number.isInteger(v)) {
+          // 0.5 becomes (/ 1 2) rather than a float: the backend is exact
+          const f = M().fraction(v);
+          return `(/ ${f.s < 0 ? "-" : ""}${f.n} ${f.d})`;
+        }
+        return String(v);
+      }
+      if (v && v.n !== undefined && v.d !== undefined)
+        return `(/ ${v.s < 0 ? "-" : ""}${v.n} ${v.d})`;
+      return String(v);
+    }
+    case "SymbolNode":
+      return node.name;
+    case "ParenthesisNode":
+      return sexp(node.content);
+    case "OperatorNode": {
+      const op = OPS[node.fn];
+      if (!op) throw new Error(`unsupported operator ${node.fn}`);
+      return `(${op} ${node.args.map(sexp).join(" ")})`;
+    }
+    default:
+      throw new Error(`unsupported ${node.type.replace("Node", "").toLowerCase()}`);
   }
-  if (x && typeof x === "object" && "n" in x && "d" in x) {
-    const s = x.s === undefined ? 1n : BigInt(x.s);
-    return { n: s * BigInt(x.n), d: BigInt(x.d) };
-  }
-  const v = Number(x);
-  if (Number.isInteger(v)) return { n: BigInt(v), d: 1n };
-  return { n: null, x: v };
 }
 
+const isIntStr = (s) => /^[+-]?\d+$/.test(s);
+
 /**
- * @returns {{coeffs: string[], scaled: boolean}} little-endian integer coefficients
+ * @returns {string} either a coefficient list "c0,c1,..." or an s-expression,
+ *   both of which the backend accepts. An s-expression always starts with "(",
+ *   which is how the two are told apart.
  */
-export function parsePolynomial(raw) {
+export function toWire(raw) {
   const s = String(raw).trim();
   if (!s) throw new Error("enter a polynomial");
 
@@ -54,32 +68,26 @@ export function parsePolynomial(raw) {
   if (!/[a-zA-Z]/.test(s)) {
     const cs = s.split(",").map((t) => t.trim()).filter(Boolean);
     if (!cs.every(isIntStr)) throw new Error("coefficients must be integers");
-    while (cs.length > 1 && cs[cs.length - 1] === "0") cs.pop();
-    return { coeffs: cs, scaled: false };
+    return cs.join(",");
   }
 
-  let r;
+  let node;
   try {
-    r = M().rationalize(s, {}, true);
+    node = M().parse(s);
   } catch (e) {
     throw new Error(`cannot read that expression (${e.message || e})`);
   }
 
-  // rationalize returns a fraction; we need a polynomial
-  const den = r.denominator ? r.denominator.toString() : "1";
-  if (den !== "1") throw new Error(`not a polynomial — denominator ${den}`);
-  if (r.variables && r.variables.length > 1)
-    throw new Error(`one variable only, saw ${r.variables.join(", ")}`);
-
-  const parts = (r.coefficients || []).map(toBigIntExact);
-  if (parts.some((p) => p.n === null)) throw new Error("coefficients must be rational");
-
-  // clear denominators: scaling f leaves its roots, and so the whole question,
-  // untouched
-  let L = 1n;
-  for (const p of parts) L = (L / gcd2(L, p.d)) * p.d;
-  const coeffs = parts.map((p) => ((p.n * L) / p.d).toString());
-  while (coeffs.length > 1 && coeffs[coeffs.length - 1] === "0") coeffs.pop();
-  if (coeffs.every((c) => c === "0")) throw new Error("f must be nonzero");
-  return { coeffs, scaled: L !== 1n };
+  const vars = new Set();
+  node.traverse((n) => { if (n.type === "SymbolNode") vars.add(n.name); });
+  if (vars.size > 1) throw new Error(`one variable only, saw ${[...vars].join(", ")}`);
+  const v = [...vars][0];
+  if (v && v !== "x") {
+    // let the user write t or y; the backend only knows x
+    node = node.transform((n) =>
+      n.type === "SymbolNode" && n.name === v ? new (M().SymbolNode)("x") : n);
+  }
+  // always parenthesised, so the backend can tell it from a coefficient list
+  const body = sexp(node);
+  return body.startsWith("(") ? body : `(+ ${body})`;
 }
