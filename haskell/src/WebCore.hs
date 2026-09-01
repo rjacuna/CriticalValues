@@ -178,10 +178,12 @@ critPoints s = dedupe
 --
 -- @k@ is what makes @g@ and @g\'@ shareable axes. They differ by orders of
 -- magnitude: on @x⁵−x−1@, @g@ spans about 1.7 while @g\'@ runs to ±6·10⁴, so
--- an unscaled @g\'@ is a vertical stripe. Dividing by @k@ — the largest @|g\'|@
--- in frame, over the half-height — puts its zeros where they belong without
--- moving them. Only the height is a lie, and @k@ is on screen to say so.
-data Plot = Plot Double Double Double Double Double
+-- an unscaled @g\'@ is a vertical stripe and its zeros — the whole point — are
+-- unreadable. Dividing by @k@, the largest @|g\'|@ in frame over the
+-- half-height, puts them where they belong without moving them. Only the
+-- height is a lie, and @k@ is on screen to say so. Rounded to an integer
+-- because it is a viewing choice, not a measurement, and the reader edits it.
+data Plot = Plot Double Double Double Double Integer
 
 plotOf :: Setup -> Maybe Plot
 plotOf s = case critPoints s of
@@ -193,7 +195,7 @@ plotOf s = case critPoints s of
       x0 = minimum bs;      x1 = maximum bs
       y0 = minimum (0 : as); y1 = maximum (0 : as)
       padx | x1 > x0   = 0.25 * (x1 - x0)
-           | otherwise = 4 * halfWidth s c0
+           | otherwise = halfWidth s c0
       pady | y1 > y0   = 0.25 * (y1 - y0)
            | otherwise = max 1 (abs (snd c0))
       xlo = x0 - padx; xhi = x1 + padx
@@ -203,13 +205,15 @@ plotOf s = case critPoints s of
       -- high-degree polynomial and its largest values in frame are always out
       -- at the edges, so scaling by those would flatten every interior zero —
       -- exactly the part the plot exists to show. A lone critical point has no
-      -- span, so it gets one curvature half-width to either side.
+      -- span, so it gets one curvature half-width to either side -- exactly the
+-- distance over which @g@ crosses the height the y-range already allows, so
+-- the curve fills the frame instead of leaving it at the corners.
       (s0, s1) | x1 > x0   = (x0, x1)
-               | otherwise = (x0 - padx / 4, x1 + padx / 4)
+               | otherwise = (x0 - padx, x1 + padx)
       m   = maximum [ abs (realPart (evalC gp (t :+ 0)))
                     | i <- [0 .. 400 :: Int]
                     , let t = s0 + (s1 - s0) * fromIntegral i / 400 ]
-      k   = max 1 (m / max 1e-300 ((yhi - ylo) / 2))
+      k   = max 1 (round (m / max 1e-300 ((yhi - ylo) / 2)))
 
 -- | Half the width over which @g@ rises by @max(1,|α|)@ above a critical point.
 halfWidth :: Setup -> (Double, Double) -> Double
@@ -222,7 +226,7 @@ jplot :: Plot -> String
 jplot (Plot a b c d k) = obj
   [ ("xlo", jstr (showComplex 7 (a :+ 0))), ("xhi", jstr (showComplex 7 (b :+ 0)))
   , ("ylo", jstr (showComplex 7 (c :+ 0))), ("yhi", jstr (showComplex 7 (d :+ 0)))
-  , ("k",   jstr (showComplex 7 (k :+ 0))) ]
+  , ("k",   jstr (show k)) ]
 
 jcrit :: [(Double, Double)] -> String
 jcrit bs = "[" ++ intercalate ","
