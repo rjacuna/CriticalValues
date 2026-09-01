@@ -55,6 +55,10 @@
 \newcommand\1{\mathbb{1}}
 % The dilation p(MX), used on every line of §3.
 \newcommand\dil[1]{\widetilde{#1}}
+% breakable underscore, so long Lean identifiers can wrap in a table cell
+\newcommand\us{\_\discretionary{}{}{}}
+\newcommand\dt{.\discretionary{}{}{}}
+\newcommand\id[1]{\texttt{#1}}
 
 % Color
 \usepackage[dvipsnames]{xcolor}
@@ -732,6 +736,94 @@ h_{0}^{j-1}$, the output is large even for small input: $f = x^{5}-x-1$ gives a
 $g$ of degree $10$ with $34$-digit coefficients, and $f = x^{10} + 20x^{4} +
 x^{3} - 10x^{2} + 1$ gives degree $20$ with $376$-digit coefficients. This is
 not a defect of the implementation; it is the size of the answer.
+
+
+\section{Appendix: provenance of the imported results}\label{Sprov}
+
+A formalization is only as attributable as its imports. This appendix records,
+for every Mathlib result the development invokes by name, where the mathematics
+came from.
+
+The list was extracted mechanically rather than by memory: a Lean metaprogram
+resolves every identifier appearing in the sources against the environment and
+reports those that Mathlib owns, together with the module defining each. It
+finds about sixty named results across fifty modules.
+
+The first thing that extraction shows is that Mathlib itself attributes none of
+them. Of Mathlib's $8{,}264$ files, $862$ carry a \texttt{\#\# References}
+section; of the fifty this development depends on, \emph{none} does. Its
+bibliography runs to $484$ entries and contains nothing for Gauss's lemma,
+B\'ezout's identity, Taylor's theorem or Dedekind. That is not an oversight. It
+is a fair description of the material: everything Theorem \ref{T1} imports is
+classical, and almost all of it predates 1900. The modern content of the
+development is the construction of \S\ref{Scons} and the descent of
+\S\ref{Sdesc}, neither of which is imported from anywhere.
+
+\begin{center}
+  \footnotesize
+  \begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}Xl@{}}
+    \textit{Result used} & \textit{Mathlib declarations} & \textit{Origin}\\[2pt]
+    \hline
+    Gauss's lemma; content and primitive part
+      & \id{IsPrimitive.Int.irreducible\us iff\us irreducible\us map\us cast},
+        \id{primPart\us mul}, \id{isPrimitive\us primPart},
+        \id{primPart\us dvd}, \id{content\us eq\us zero\us iff}
+      & \cite{gauss1801}, art.~42 \\[4pt]
+    Unique factorization; existence of an irreducible factor
+      & \id{UniqueFactorizationMonoid\dt factors}, \id{factors\us prod},
+        \id{irreducible\us of\us factor},
+        \id{WfDvdMonoid.exists\us irreducible\us factor}
+      & \cite{gauss1801}, art.~16; \cite{cohn1968,aaz1990} \\[4pt]
+    B\'ezout in $\Q[X]$
+      & \id{Irreducible.coprime\us iff\us not\us dvd}
+      & Euclid VII.1--2; \cite{bezout1779} \\[4pt]
+    Clearing denominators (localization)
+      & \id{IsLocalization\dt integerNormalization},
+        \id{integerNormalization\us spec}, \id{nonZeroDivisors}
+      & \cite{grell1927} \\[4pt]
+    Formal derivative; product and chain rules
+      & \id{derivative\us mul}, \id{derivative\us comp},
+        \id{derivative\us map}, \id{natDegree\us derivative\us lt},
+        \id{derivative\us ne\us zero}
+      & \cite{lagrange1797} \\[4pt]
+    Taylor to second order (Lemma \ref{LT})
+      & \id{Polynomial.binomExpansion}
+      & \cite{taylor1715} \\[4pt]
+    Congruences; $\F_{p}[X]$ a domain (Lemma \ref{LC})
+      & \id{ZMod}, \id{Polynomial.map}, \id{Nat.Prime}
+      & \cite{gauss1801}, \S I \\[4pt]
+    Algebraic $\Leftrightarrow$ integral
+      & \id{isAlgebraic\us iff\us isIntegral},
+        \id{IsIntegral.of\us mem\us of\us fg}
+      & \cite{dedekind1871} \\[4pt]
+    Degree arithmetic; associates, units, prime vs.\ irreducible
+      & \id{natDegree\us mul}, \id{natDegree\us comp},
+        \id{natDegree\us le\us of\us dvd}, \id{Associated.pow\us pow},
+        \id{isUnit\us of\us dvd\us unit}, \id{Irreducible.prime}
+      & classical \\[4pt]
+    \id{Algebra}, \id{AlgEquiv}, \id{RingHom} scaffolding
+      & \id{AlgEquiv.ofAlgHom}, \id{aeval\us map\us algebraMap},
+        \id{MulEquiv.irreducible\us iff}
+      & no mathematical content \\
+    \hline
+  \end{tabularx}
+\end{center}
+
+Three entries deserve a word. The attribution of localization to Grell
+\cite{grell1927} is the standard one, though rings of fractions were in use
+earlier and reached their general form later. Mathlib states the notion by its
+universal property, and only the denominator-clearing corollary is used here. The row for degree arithmetic is
+deliberately blank: these are the facts every algebra course proves and no
+paper claims. And the last row is scaffolding --- statements about Lean's
+algebraic hierarchy rather than about mathematics.
+
+Two gaps in Mathlib are worth recording in the same spirit, since they are the
+places where the development could not import and had to build. Mathlib has the
+translation $X \mapsto X + c$ as an algebra equivalence but not the dilation
+$X \mapsto cX$, which Lemma \ref{LD} needs. And
+\texttt{Polynomial.binomExpansion} is stated for \texttt{eval} rather than for
+\texttt{comp}, so Lemma \ref{LT} is obtained by transporting it along
+$C : \Z[X] \to (\Z[X])[X]$ rather than by citing it.
 
 \printbibliography
 
