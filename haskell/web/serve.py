@@ -30,14 +30,31 @@ class Backend:
         self.path = path
         self.lock = threading.Lock()
         self.proc = None
+        self.mtime = None
 
     def _spawn(self):
+        self.mtime = self.path.stat().st_mtime
         self.proc = subprocess.Popen(
             [str(self.path)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, encoding="utf-8", bufsize=1)
 
+    def _stale(self):
+        """A `cabal build` while the server runs would otherwise leave the warm
+        process serving the previous binary — silently, and confusingly."""
+        try:
+            return self.mtime is not None and self.path.stat().st_mtime != self.mtime
+        except OSError:
+            return False
+
     def solve(self, wire):
         with self.lock:
+            if self.proc is not None and self._stale():
+                print("critjson rebuilt — restarting backend")
+                try:
+                    self.proc.kill()
+                except Exception:
+                    pass
+                self.proc = None
             if self.proc is None or self.proc.poll() is not None:
                 self._spawn()
             try:

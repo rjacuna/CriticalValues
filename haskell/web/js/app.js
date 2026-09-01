@@ -45,7 +45,37 @@ const tex = (el, s, display = false) => {
   catch { el.textContent = s; }
 };
 
-function polyTex(coeffs, v = "X") {
+// One LaTeX fragment per term, sign included, so the container can wrap
+// between terms. Returns [] for the zero polynomial.
+function polyTerms(coeffs, v = "x") {
+  const out = [];
+  for (let j = coeffs.length - 1; j >= 0; j--) {
+    const c = BigInt(coeffs[j]);
+    if (c === 0n) continue;
+    const a = c < 0n ? -c : c;
+    let body;
+    if (j === 0) body = a.toString();
+    else body = (a === 1n ? "" : a.toString()) + (j === 1 ? v : `${v}^{${j}}`);
+    const sign = out.length === 0 ? (c < 0n ? "-" : "") : (c < 0n ? "-" : "+");
+    out.push(out.length === 0 ? sign + body : sign + "\\," + body);
+  }
+  return out.length ? out : ["0"];
+}
+
+// Render `lhs = <terms>` into `el`, one KaTeX node per term.
+function renderPolyWrapped(el, lhs, coeffs, v = "x") {
+  el.innerHTML = "";
+  const head = document.createElement("span");
+  tex(head, `${lhs} =`);
+  el.append(head);
+  for (const t of polyTerms(coeffs, v)) {
+    const s = document.createElement("span");
+    tex(s, t);
+    el.append(s);
+  }
+}
+
+function polyTex(coeffs, v = "x") {
   const parts = [];
   for (let j = coeffs.length - 1; j >= 0; j--) {
     const c = BigInt(coeffs[j]);
@@ -125,16 +155,16 @@ function render(d) {
   });
 
   if (d.degenerate) {
-    tex($("#gout"), "g = X^2", true);
+    renderPolyWrapped($("#gout"), "g", ["0", "0", "1"]);
     $("#gmeta").textContent = "§6, X ∣ f";
-    $("#setupmeta").innerHTML = "H = X";
-    $("#copyg").dataset.copy = "X^2";
+    $("#setupmeta").innerHTML = "H = x";
+    $("#copyg").dataset.copy = "x^2";
     $("#checks").innerHTML = "";
     return;
   }
 
   const gTex = polyTex(d.g);
-  tex($("#gout"), `g = ${gTex}`, true);
+  renderPolyWrapped($("#gout"), "g", d.g);
   $("#copyg").dataset.copy = gTex;
   $("#gmeta").textContent = `degree ${d.degG}, ${d.digitsG}-digit coefficients`;
 

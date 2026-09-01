@@ -75,10 +75,12 @@ deg3 a b c d
            in if magnitude u > 1e-12 then u else ccbrt k ((d2c d1 - inner) / 2)
     val k = let cK = zeta k * cc 0
             in negate (d2c b + cK + d2c d0 / cK) / d2c (3 * a)
-    tex k = unlines
+    tex k = unlines $
       [ "\\begin{aligned}"
-      , "\\Delta_0 &= " ++ show d0 ++ ", \\qquad \\Delta_1 = " ++ show d1 ++ " \\\\"
-      , "C &= \\sqrt[3]{\\tfrac{1}{2}\\left(" ++ show d1
+      , "\\Delta_0 &= " ++ show d0 ++ ", \\qquad \\Delta_1 = " ++ show d1 ++ " \\\\" ]
+      ++ [ "\\zeta &= \\tfrac{-1 + \\sqrt{-3}}{2}"
+           ++ " \\quad (\\zeta^3 = 1) \\\\" | k /= 0 ] ++
+      [ "C &= \\sqrt[3]{\\tfrac{1}{2}\\left(" ++ show d1
         ++ " + \\sqrt{" ++ show (d1 * d1 - 4 * d0 ^ (3 :: Int)) ++ "}\\right)} \\\\"
       , "x &= -\\frac{1}{" ++ show (3 * a) ++ "}\\left(" ++ show b ++ " + "
         ++ zetaTex k ++ "C + \\frac{" ++ show d0 ++ "}{" ++ zetaTex k ++ "C}\\right)"
