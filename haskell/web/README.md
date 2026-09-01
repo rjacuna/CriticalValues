@@ -5,8 +5,24 @@ cabal build critjson       # the backend
 ./web/serve.py             # http://localhost:8000
 ```
 
-One input, three panels: the roots of `f`, the `g` the construction produces,
-and the critical point `β = α/M` for whichever root is selected.
+One input, two panels: the roots of `f` on the left, and on the right the `g`
+the construction produces, preceded by `M` and the critical point `β` for
+whichever root is selected.
+
+Two panels rather than three because **`β` is always `α/M`**. The construction
+builds `g = M·x + h(M·x)·W`, so `g(β) = Mβ + h(α)W(β) = α`: the linear term
+produces `α` and the rest exists only to be divisible by `H²`, vanishing at `β`.
+There is no independent `β` to display — only `M`, and the decimal. Its closed
+form would likewise just be the closed form of `α` divided by `M`, which is
+already on the left.
+
+**`g` does not change when you select a different root, and that is correct.**
+`g` depends on `h`, never on `α`. Without a factoriser `h` is the squarefree
+part of `f`, so a single `g` serves every root — which is exactly the property
+that makes this the right variant for a UI that lets you pick any root. With
+FLINT supplying an irreducible factor instead, `g` *would* change when the
+selected root belongs to a different factor of a reducible `f`; for irreducible
+`f` it stays fixed either way.
 
 ## No mathematics happens in JavaScript
 
