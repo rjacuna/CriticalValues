@@ -20,7 +20,7 @@
 module WebCore (run) where
 
 import Data.Complex (Complex(..), magnitude, realPart, imagPart)
-import Data.List (intercalate, minimumBy)
+import Data.List (intercalate, minimumBy, nub, sortBy)
 import Data.Maybe (isJust)
 import Data.Ord (comparing)
 import Poly
@@ -103,7 +103,9 @@ build f hs =
     chosen   = if factored
                  then supplied
                  else either (const []) (: []) (fmap setH (setupExists SquareFree f))
-    regs     = [ Reg s | h <- chosen, Right s <- [setupOfFactor f h] ]
+    -- `nub`: a factoriser reporting h with multiplicity would otherwise
+    -- build the same entry twice, and list its roots twice with it.
+    regs     = [ Reg s | h <- nub chosen, Right s <- [setupOfFactor f h] ]
     entries  = regs ++ [ Deg f | isJust (exactDiv f xP) ]
 
 -- | The whole answer: one entry in @setups@ per factor, and every root tagged
@@ -157,6 +159,16 @@ jentry (Reg s) = let plot = plotOf (setG s) in obj
   , ("checks",  jchecks (checks s))
   ]
 
+-- | The multiplicity of a factor in @f@: the largest @m@ with @h^m ∣ f@.
+-- Exact division, not root clustering — the roots are approximate and a double
+-- root is not reliably distinguishable from two close ones by looking at them.
+multOf :: Poly -> Poly -> Int
+multOf f h = go (0 :: Int) f
+  where
+    go n p = case exactDiv p h of
+      Just q  -> go (n + 1) q
+      Nothing -> n
+
 -- | Every root of @f@, matched to the setup whose @h@ vanishes there — so a
 -- reducible @f@ gets a different @g@ per factor, and @β = α/M@ uses that
 -- factor's own @M@. The match is numeric because the roots are; the winner
@@ -169,20 +181,24 @@ jentry (Reg s) = let plot = plotOf (setG s) in obj
 -- @x = −2@ respectively. It also means a degree-6 @f@ splitting into two cubics
 -- gets Cardano twice rather than nothing at all.
 jroots :: Poly -> [Entry] -> String
-jroots f ss = "[" ++ intercalate "," (map one (roots f)) ++ "]"
+jroots f ss = "[" ++ intercalate "," (map one ordered) ++ "]"
   where
     -- one radical table per factor, not per root
-    brss = [ radicals (entH e) | e <- ss ]
-    one a = obj
+    brss  = [ radicals (entH e) | e <- ss ]
+    mults = [ multOf f (entH e) | e <- ss ]
+    -- The roots of each factor, once each: `h` is irreducible and we are in
+    -- characteristic zero, so it is separable and its roots are simple.  A
+    -- repeated factor of `f` shows as a multiplicity rather than as a repeat.
+    rows    = [ (a, i) | (i, e) <- zip [(0 :: Int) ..] ss, a <- roots (entH e) ]
+    ordered = sortBy (comparing (realPart . fst) <> comparing (imagPart . fst)) rows
+    one (a, i) = obj
       [ ("alpha",  jstr (showComplex 7 a))
       , ("beta",   jstr (showComplex 7 (a / (fromInteger (entM (ss !! i)) :+ 0))))
       , ("setup",  jstr (show i))
       , ("degree", jstr (show (deg (entH (ss !! i)))))
+      , ("mult",   jstr (show (mults !! i)))
       , ("rad",    maybe "null" (jstr . brLatex . nearest a) (brss !! i))
       ]
-      where i = idxOf a
-    idxOf a = snd (minimumBy (comparing fst)
-                [ (magnitude (evalC (entH e) a), i) | (i, e) <- zip [(0 :: Int) ..] ss ])
     nearest a = minimumBy (comparing (\b -> magnitude (brValue b - a)))
 
 -- | The real critical points of @g@: the real roots of @g\'@, each with the

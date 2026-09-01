@@ -152,6 +152,13 @@ function render(d) {
     const span = document.createElement("span");
     tex(span, `\\alpha_{${i + 1}} = ${r.alpha}`);
     el.append(span);
+    // a repeated factor of f is one root listed once, not the same root n times
+    if (Number(r.mult) > 1) {
+      const m = document.createElement("span");
+      m.className = "ms-auto small text-body-secondary";
+      m.textContent = `multiplicity ${r.mult}`;
+      el.append(m);
+    }
     // touch: react on pointerdown so the tap feels immediate
     el.addEventListener("pointerdown", () => el.classList.add("pressed"));
     for (const ev of ["pointerup", "pointercancel", "pointerleave"])
