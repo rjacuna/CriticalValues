@@ -2,6 +2,7 @@
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
 import { pickBackend, loadFlint } from "./backend.js";
+import { showGraph, openInDesmos } from "./desmos.js";
 import { toWire } from "./parse.js";
 
 const $ = (s) => document.querySelector(s);
@@ -82,6 +83,24 @@ function select(i) {
   $("#bnote").innerHTML = "";
   tex($("#bnote"), `\\beta = \\alpha / M \\text{ — the construction always rescales}`);
 
+  // real roots only: a complex β is not a point on a real plot
+  const isReal = !r.alpha.includes("i") && !d.degenerate;
+  const panel = $("#col-graph");
+  panel.classList.toggle("d-none", !isReal);
+  if (isReal) {
+    const payload = {
+      gLatex: polyTex(s.g), gpLatex: polyTex(s.gp || ["0"]),
+      alpha: r.alpha, beta: r.beta, crit: s.crit || [], plot: s.plot,
+    };
+    panel.dataset.payload = JSON.stringify(payload);
+    const n = payload.crit.length;
+    $("#desmos-k").textContent = `k = ${s.plot ? s.plot.k : 1}`;
+    $("#desmos-cap").textContent =
+      `${n} real critical point${n === 1 ? "" : "s"} of g; the red line is β = ${r.beta}, `
+      + `where g takes the selected value α = ${r.alpha}`;
+    showGraph($("#desmos-host"), $("#desmos-fallback"), payload);
+  }
+
   const sticky = $("#stickysel");
   sticky.classList.add("on");
   tex($("#stickysel-val"), `\\alpha = ${r.alpha}`);
@@ -124,6 +143,7 @@ function render(d) {
   });
 
   if (d.degenerate) {
+    $("#col-graph").classList.add("d-none");
     renderPolyWrapped($("#gout"), "g", ["0", "0", "1"]);
     $("#gmeta").textContent = "§6, X ∣ f";
     $("#setupmeta").innerHTML = "H = x";
@@ -141,6 +161,8 @@ function renderSetup(d, s) {
   const gTex = polyTex(s.g);
   renderPolyWrapped($("#gout"), "g", s.g);
   $("#copyg").dataset.copy = gTex;
+  renderPolyWrapped($("#gpout"), "g'", s.gp || ["0"]);
+  $("#copygp").dataset.copy = polyTex(s.gp || ["0"]);
   $("#gmeta").textContent = `degree ${s.degG}, ${s.digitsG}-digit coefficients`;
 
   const meta = $("#setupmeta");
@@ -241,8 +263,18 @@ addEventListener("DOMContentLoaded", async () => {
   $$(".ex").forEach((b) => b.addEventListener("click", () => {
     $("#finput").value = b.dataset.f; compute();
   }));
-  for (const id of ["#copyg", "#copyb"]) {
+  $("#opendesmos").addEventListener("click", async (e) => {
+    const b = e.currentTarget;
+    const d = JSON.parse($("#col-graph").dataset.payload || "{}");
+    const old = b.textContent;
+    try { await openInDesmos(d); b.textContent = "Copied — paste there"; }
+    catch { b.textContent = "Opened — copy below"; }
+    setTimeout(() => { b.textContent = old; }, 2400);
+  });
+
+  for (const id of ["#copyg", "#copygp", "#copyb", "#copydesmos"]) {
     const b = $(id);
+    if (!b) continue;
     b.addEventListener("click", async () => {
       const v = b.dataset.copy;
       if (!v) return;
