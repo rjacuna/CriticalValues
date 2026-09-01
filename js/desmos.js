@@ -12,12 +12,11 @@
 // the Haskell said, whereas this is an independent evaluation by another engine
 // arriving at the same value.
 //
-// g' is plotted as g'/k with k = 1, so what is drawn is g' itself. The divisor
-// is there only as a handle: g' dwarfs g — on x⁵−x−1 it reaches ±6·10⁴ against
-// g's 1.7 — so most of it leaves the frame. Raising k in the expression list
-// pulls it back in, and changes the height only: the zeros, which are what the
-// plot is about, do not move. The Haskell sends a k that fits the window, and
-// the panel prints it as the suggestion.
+// g' is plotted as g'/k. It dwarfs g — on x⁵−x−1 it reaches ±6·10⁴ against g's
+// 1.7 — so undivided it is a vertical stripe and its zeros, which are what the
+// plot is about, cannot be read off. k comes from the Haskell with the window,
+// an integer because the reader is meant to edit it; k = 1 in the expression
+// list gives g' undivided. Dividing changes the height only, and moves no zero.
 //
 // Only offered for real roots: a complex β is not a point on a real plot.
 //
@@ -76,10 +75,15 @@ export function expressions({ gLatex, gpLatex, crit, plot, beta }) {
   const { sel, others } = split(crit || [], beta);
   const refine = (v) => `N\\left(N\\left(N\\left(${v}\\right)\\right)\\right)`;
   const out = [
-    { id: "G", latex: `G\\left(x\\right)=${gLatex}` },
-    { id: "D", latex: `D\\left(x\\right)=${gpLatex}` },
-    { id: "k", latex: "k=1" },
-    { id: "N", latex: "N\\left(x\\right)=x-\\frac{D\\left(x\\right)}{D'\\left(x\\right)}" },
+    // hidden: setExpression plots a function definition as well as defining it,
+    // so an unhidden G, D or N draws a second curve in a colour of Desmos's
+    // choosing. N is the worst of them — the Newton map is a horizontal line
+    // wherever g is a quadratic, and a rational curve otherwise.
+    { id: "G", latex: `G\\left(x\\right)=${gLatex}`, hidden: true },
+    { id: "D", latex: `D\\left(x\\right)=${gpLatex}`, hidden: true },
+    { id: "k", latex: `k=${plot.k}` },
+    { id: "N", latex: "N\\left(x\\right)=x-\\frac{D\\left(x\\right)}{D'\\left(x\\right)}",
+      hidden: true },
     { id: "cg", latex: "y=G\\left(x\\right)", color: COLORS.g, lineWidth: 2.5 },
     { id: "cd", latex: "y=\\frac{D\\left(x\\right)}{k}", color: COLORS.gp, lineWidth: 2 },
   ];
