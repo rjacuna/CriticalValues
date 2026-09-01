@@ -23,6 +23,7 @@ import Data.Complex (Complex(..), magnitude)
 import Data.List (intercalate, minimumBy)
 import Data.Ord (comparing)
 import Poly
+import Expr (evalExpr)
 import Factor (Strategy(..))
 import Construct
 import Verify
@@ -30,11 +31,18 @@ import Roots
 import Radicals
 
 -- | Split on the single @'|'@, then on commas.
-parseInput :: String -> (Poly, Maybe Poly)
-parseInput s = (readPoly a, if null (dropWhile (== ' ') b') then Nothing else Just (readPoly b'))
+parseInput :: String -> Either String (Poly, Maybe Poly)
+parseInput s = do
+  f <- readF a
+  Right (f, if null (dropWhile (== ' ') b') then Nothing else Just (readPoly b'))
   where
     (a, b) = break (== '|') s
     b'     = drop 1 b
+    -- An s-expression (always parenthesised) is an expression from the front
+    -- end's parser; anything else is a plain coefficient list.
+    readF t = case dropWhile (== ' ') t of
+      t'@('(' : _) -> evalExpr t'
+      t'           -> Right (readPoly t')
 
 readPoly :: String -> Poly
 readPoly = poly . map read . filter (not . null) . splitOn ','
@@ -48,8 +56,9 @@ splitOn c s = case break (== c) s of
 run :: String -> String
 run input =
   case parseInput input of
-    (f, _) | isZero f || deg f < 1 -> err "f must be nonconstant"
-    (f, mh)
+    Left e -> err e
+    Right (f, _) | isZero f || deg f < 1 -> err "f must be nonconstant"
+    Right (f, mh)
       | coeff f 0 == 0 -> degenerate f
       | otherwise ->
           -- h supplied  -> FLINT chose it (the default path)
@@ -81,6 +90,7 @@ ok s = obj
   , ("g",      jarr (pcoeffs (setG s)))
   , ("degG",   jstr (show (deg (setG s))))
   , ("digitsG", jstr (show (digitsOf (setG s))))
+  , ("f",      jarr (pcoeffs (setF s)))
   , ("checks", jchecks (checks s))
   , ("roots",  jroots s)
   ]

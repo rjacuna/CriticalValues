@@ -2,7 +2,7 @@
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
 import { pickBackend } from "./backend.js";
-import { parsePolynomial } from "./parse.js";
+import { toWire } from "./parse.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -93,6 +93,11 @@ function render(d) {
   state.data = d;
   $("#results").classList.remove("d-none");
 
+  // Echo f as the *backend* expanded it. The 22 checks cannot catch a
+  // mis-parse — they verify the construction for whatever f they were given —
+  // so what was actually understood has to be on screen.
+  if (d.f) renderPolyWrapped($("#fecho"), "f", d.f);
+
   const list = $("#rootlist");
   list.innerHTML = "";
   d.roots.forEach((r, i) => {
@@ -162,22 +167,10 @@ const fail = (m) => { const a = $("#alert"); a.textContent = m; a.classList.remo
 
 async function compute() {
   $("#alert").classList.add("d-none");
-  let coeffs, scaled;
-  try { ({ coeffs, scaled } = parsePolynomial($("#finput").value)); }
+  let wire;
+  try { wire = toWire($("#finput").value); }
   catch (e) { fail(String(e.message || e)); return; }
-
-  // Echo what was actually parsed. The checks cannot catch a mis-parse — they
-  // verify the construction for the f they were handed — so this has to be
-  // visible.
-  const fEcho = $("#fecho");
-  fEcho.innerHTML = "";
-  renderPolyWrapped(fEcho, "f", coeffs);
-  if (scaled) {
-    const n = document.createElement("span");
-    n.className = "text-body-secondary ms-2";
-    n.textContent = "(cleared denominators — same roots)";
-    fEcho.append(n);
-  }
+  $("#fecho").innerHTML = "";
 
   $("#results").classList.add("d-none");
   $("#stickysel").classList.remove("on");
@@ -185,7 +178,7 @@ async function compute() {
   try {
     // h is left empty: the backend uses the squarefree part, so one g covers
     // every root of f. With FLINT it will pass the irreducible factor instead.
-    const d = await backend.solve(`${coeffs.join(",")}|`);
+    const d = await backend.solve(`${wire}|`);
     if (!d.ok) { fail(d.error || "failed"); return; }
     render(d);
   } catch (e) {
