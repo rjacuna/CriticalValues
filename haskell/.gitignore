@@ -4,3 +4,7 @@ crit
 bench
 dist-newstyle/
 flint2-fork/Flint2-0.1.0.5/
+wasm/build/
+wasm/*.wasm
+wasm/flint.js
+wasm/crit.js

@@ -1,0 +1,129 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Critical values of integer polynomials</title>
+<style>
+  :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 15%, transparent); }
+  body { font: 15px/1.55 ui-sans-serif, system-ui, sans-serif; max-width: 60rem;
+         margin: 3rem auto; padding: 0 1.25rem; }
+  h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
+  .sub { opacity: .7; margin: 0 0 2rem; }
+  form { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+  input { flex: 1 1 22rem; font: inherit; font-family: ui-monospace, monospace;
+          padding: .5rem .65rem; border: 1px solid var(--line); border-radius: .4rem;
+          background: transparent; color: inherit; }
+  button { font: inherit; padding: .5rem 1rem; border-radius: .4rem; cursor: pointer;
+           border: 1px solid var(--line); background: transparent; color: inherit; }
+  button:disabled { opacity: .5; cursor: default; }
+  .ex { margin: .6rem 0 0; font-size: .87rem; opacity: .75; }
+  .ex code { cursor: pointer; text-decoration: underline dotted; }
+  #busy { display: none; align-items: center; gap: .6rem; margin: 1.5rem 0; }
+  #busy.on { display: flex; }
+  .spin { width: 1rem; height: 1rem; border: 2px solid var(--line);
+          border-top-color: currentColor; border-radius: 50%;
+          animation: r .8s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; }
+  td, th { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--line);
+           vertical-align: top; }
+  th { width: 6rem; font-weight: 600; }
+  .poly { font-family: ui-monospace, monospace; font-size: .85rem; word-break: break-all; }
+  .checks { margin-top: 1.5rem; }
+  .chk { font-family: ui-monospace, monospace; font-size: .82rem; padding: .15rem 0; }
+  .ok::before  { content: "ok   "; color: #22a06b; }
+  .bad::before { content: "FAIL "; color: #d64545; font-weight: 700; }
+  .err { color: #d64545; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+  footer { margin-top: 3rem; font-size: .85rem; opacity: .7; }
+</style>
+
+<h1>Critical values of integer polynomials</h1>
+<p class="sub">Given a nonconstant <em>f</em> ∈ ℤ[X], find <em>g</em> and irreducible
+<em>H</em> with <em>H</em> ∣ <em>g</em>′ and <em>H</em>² ∣ <em>f</em> ∘ <em>g</em>.</p>
+
+<form id="f">
+  <input id="c" value="1, 0, 1" spellcheck="false"
+         aria-label="coefficients of f, low to high">
+  <button id="go">Compute</button>
+</form>
+<p class="ex">coefficients low to high — 
+  <code data-c="1, 0, 1">X²+1</code> ·
+  <code data-c="-2, 0, 0, 1">X³−2</code> ·
+  <code data-c="-1, -1, 0, 1">X³−X−1</code> ·
+  <code data-c="-8, -2, -1, 1">X³−X²−2X−8</code> ·
+  <code data-c="576, 0, -960, 0, 352, 0, -40, 0, 1">Swinnerton-Dyer S₃</code>
+</p>
+
+<div id="busy"><div class="spin"></div><span id="status">working…</span></div>
+<div id="out"></div>
+
+<footer>
+  Factoring runs in FLINT 3.4.0 compiled to WebAssembly; the construction and all
+  22 checks run in Haskell compiled to <code>wasm32-wasi</code>. Coefficients cross
+  every boundary as decimal strings, never as JavaScript numbers — <em>g</em>
+  routinely exceeds 2<sup>53</sup>.
+</footer>
+
+<script type="module">
+const $ = (s) => document.querySelector(s);
+const worker = new Worker("./worker.js", { type: "module" });
+let running = false;
+
+const poly = (cs) => {
+  const t = [];
+  for (let j = cs.length - 1; j >= 0; j--) {
+    const c = BigInt(cs[j]); if (c === 0n) continue;
+    const a = c < 0n ? -c : c, sign = c < 0n ? "−" : "+";
+    const body = j === 0 ? `${a}` : (a === 1n ? "" : `${a}`) + (j === 1 ? "X" : `X^${j}`);
+    t.push((t.length ? ` ${sign} ` : (c < 0n ? "−" : "")) + body);
+  }
+  return t.length ? t.join("") : "0";
+};
+
+function busy(on, text) {
+  $("#busy").classList.toggle("on", on);
+  if (text) $("#status").textContent = text;
+  $("#go").disabled = on;
+  running = on;
+}
+
+$("#f").onsubmit = (e) => {
+  e.preventDefault();
+  if (running) return;
+  const coeffs = $("#c").value.split(",").map((s) => s.trim()).filter(Boolean);
+  if (!coeffs.length) return;
+  $("#out").innerHTML = "";
+  busy(true, "starting…");
+  worker.postMessage({ coeffs });
+};
+
+for (const el of document.querySelectorAll(".ex code"))
+  el.onclick = () => { $("#c").value = el.dataset.c; $("#f").requestSubmit(); };
+
+worker.onmessage = ({ data }) => {
+  if (data.type === "status") { $("#status").textContent = data.text; return; }
+  if (data.type === "log")    { console.log("[hs]", data.text); return; }
+  busy(false);
+  if (data.type === "error") {
+    $("#out").innerHTML = `<p class="err">${data.text}</p>`; return;
+  }
+  const d = data.data;
+  if (!d.ok) { $("#out").innerHTML = `<p class="err">${d.error}</p>`; return; }
+  if (d.degenerate) {
+    $("#out").innerHTML = `<p>X ∣ f, so the degenerate case of §6 applies:
+      <span class="poly">g = X², H = X</span></p>`;
+    return;
+  }
+  const row = (k, v) => `<tr><th>${k}</th><td class="poly">${v}</td></tr>`;
+  $("#out").innerHTML = `
+    <table>
+      ${row("h", poly(d.h))}
+      ${row("ρ", d.rho)}
+      ${row("M", d.M)}
+      ${row("H", poly(d.H))}
+      ${row("W", poly(d.W))}
+      ${row("g", poly(d.g))}
+      ${row("deg g", d.degG + `, largest coefficient has ${d.digitsG} digits`)}
+    </table>
+    <div class="checks">${d.checks.map((c) =>
+      `<div class="chk ${c.ok ? "ok" : "bad"}">${c.name}</div>`).join("")}</div>`;
+};
+</script>
