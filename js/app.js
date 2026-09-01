@@ -103,20 +103,11 @@ function select(i) {
   if (!r.rad) $("#rootexpr").innerHTML =
     '<span class="text-body-secondary">degree &gt; 4 — no expression by radicals (Abel–Ruffini)</span>';
 
-  tex($("#bout"), `\\beta = ${r.beta}`, true);
+  tex($("#mout"), `M = ${d.M}`);
+  tex($("#bout"), `\\beta = ${r.beta}`);
   $("#copyb").dataset.copy = r.beta;
-
-  const be = $("#bexpr");
-  if (r.rad) {
-    be.innerHTML = "";
-    const a = document.createElement("div");
-    tex(a, `\\beta = \\frac{\\alpha}{${d.M}}, \\qquad \\alpha:`, true);
-    const b = document.createElement("div");
-    tex(b, r.rad, true);
-    be.append(a, b);
-  } else {
-    be.innerHTML = '<span class="text-body-secondary">—</span>';
-  }
+  $("#bnote").innerHTML = "";
+  tex($("#bnote"), `\\beta = \\alpha / M \\text{ — the construction always rescales}`);
 
   const sticky = $("#stickysel");
   sticky.classList.add("on");
@@ -170,8 +161,7 @@ function render(d) {
 
   const meta = $("#setupmeta");
   meta.innerHTML = "";
-  for (const [k, v] of [["h", polyTex(d.h)], ["H", polyTex(d.H)],
-                        ["\\rho", d.rho], ["M", d.M]]) {
+  for (const [k, v] of [["h", polyTex(d.h)], ["H", polyTex(d.H)], ["\\rho", d.rho]]) {
     const row = document.createElement("div");
     row.className = "scrollx mb-1";
     tex(row, `${k} = ${v}`);
