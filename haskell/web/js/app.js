@@ -13,9 +13,25 @@ let backend = null;
 let state = { data: null, selected: 0 };
 
 // ---------------------------------------------------------------- rendering
+// KaTeX puts a coefficient in a single text node, so a 376-digit one is an
+// unbreakable word wider than any line. A soft hyphen between every pair of
+// digits marks each break the browser may take; CSS draws the one it takes as
+// ▸. Only runs long enough to be a problem are touched, so ordinary numbers
+// keep their nowrap.
+const LONGNUM = 16;   // 16 digits already overflow a phone
+function softenDigits(el) {
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const long = [];
+  for (let n = walk.nextNode(); n; n = walk.nextNode())
+    if (n.nodeValue.length >= LONGNUM && /^\d+$/.test(n.nodeValue)) long.push(n);
+  for (const n of long) n.nodeValue = n.nodeValue.split("").join("\u00AD");
+  return long.length > 0;
+}
+
 const tex = (el, s, display = false) => {
   try { katex.render(s, el, { displayMode: display, throwOnError: false }); }
   catch { el.textContent = s; }
+  if (softenDigits(el)) el.classList.add("wrapdigits");
 };
 
 // One LaTeX fragment per term, sign included, so the container can wrap
