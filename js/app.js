@@ -1,7 +1,7 @@
 // UI only: parsing the input box, rendering with KaTeX, touch selection,
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
-import { pickBackend } from "./backend.js";
+import { pickBackend, loadFlint } from "./backend.js";
 import { toWire } from "./parse.js";
 
 const $ = (s) => document.querySelector(s);
@@ -65,6 +65,8 @@ function polyTex(coeffs, v = "x") {
 function select(i) {
   state.selected = i;
   const d = state.data, r = d.roots[i];
+  const s = d.setups[Number(r.setup) || 0];
+  renderSetup(d, s);
   $$(".root-item").forEach((el, k) => {
     el.classList.toggle("sel", k === i);
     el.setAttribute("aria-selected", k === i ? "true" : "false");
@@ -74,7 +76,7 @@ function select(i) {
   if (!r.rad) $("#rootexpr").innerHTML =
     '<span class="text-body-secondary">degree &gt; 4 — no expression by radicals (Abel–Ruffini)</span>';
 
-  tex($("#mout"), `M = ${d.M}`);
+  tex($("#mout"), `M = ${s.M}`);
   tex($("#bout"), `\\beta = ${r.beta}`);
   $("#copyb").dataset.copy = r.beta;
   $("#bnote").innerHTML = "";
@@ -127,33 +129,46 @@ function render(d) {
     $("#setupmeta").innerHTML = "H = x";
     $("#copyg").dataset.copy = "x^2";
     $("#checks").innerHTML = "";
+    $("#hsource").textContent = "";
     return;
   }
 
-  const gTex = polyTex(d.g);
-  renderPolyWrapped($("#gout"), "g", d.g);
+  select(0);
+}
+
+// One setup per irreducible factor, so this follows the selected root.
+function renderSetup(d, s) {
+  const gTex = polyTex(s.g);
+  renderPolyWrapped($("#gout"), "g", s.g);
   $("#copyg").dataset.copy = gTex;
-  $("#gmeta").textContent = `degree ${d.degG}, ${d.digitsG}-digit coefficients`;
+  $("#gmeta").textContent = `degree ${s.degG}, ${s.digitsG}-digit coefficients`;
 
   const meta = $("#setupmeta");
   meta.innerHTML = "";
-  for (const [k, v] of [["h", polyTex(d.h)], ["H", polyTex(d.H)], ["\\rho", d.rho]]) {
+  for (const [k, v] of [["h", polyTex(s.h)], ["H", polyTex(s.H)], ["\\rho", s.rho]]) {
     const row = document.createElement("div");
     row.className = "scrollx mb-1";
     tex(row, `${k} = ${v}`);
     meta.append(row);
   }
 
+  const src = $("#hsource");
+  if (d.hIrreducible) {
+    src.className = "badge text-bg-success-subtle text-success-emphasis";
+    src.textContent = `H irreducible · ${d.setups.length} factor${d.setups.length > 1 ? "s" : ""}`;
+  } else {
+    src.className = "badge text-bg-warning-subtle text-warning-emphasis";
+    src.textContent = "H irreducible only if f is — no factoriser";
+  }
+
   const ck = $("#checks");
   ck.innerHTML = "";
-  for (const c of d.checks) {
+  for (const c of s.checks) {
     const row = document.createElement("div");
     row.className = "chk " + (c.ok ? "text-success" : "text-danger fw-bold");
     row.textContent = (c.ok ? "ok   " : "FAIL ") + c.name;
     ck.append(row);
   }
-
-  select(0);
 }
 
 // ---------------------------------------------------------------- run
@@ -176,10 +191,21 @@ async function compute() {
   $("#stickysel").classList.remove("on");
   busy(true, backend.name === "wasm" ? "running in the browser…" : "computing…");
   try {
-    // h is left empty: the backend uses the squarefree part, so one g covers
-    // every root of f. With FLINT it will pass the irreducible factor instead.
-    const d = await backend.solve(`${wire}|`);
+    // First pass expands the expression and hands back f's coefficients.
+    let d = await backend.solve(`${wire}|`);
     if (!d.ok) { fail(d.error || "failed"); return; }
+
+    // Second pass, when FLINT is available: factor f and rebuild, so H really
+    // is irreducible and each factor of a reducible f gets its own g.
+    const fl = await loadFlint();
+    if (fl && d.f && !d.degenerate) {
+      busy(true, "factoring with FLINT…");
+      const factors = fl.factor(d.f).filter((h) => h.length > 1 && h[0] !== "0");
+      if (factors.length) {
+        const d2 = await backend.solve(`${d.f.join(",")}|${factors.map((h) => h.join(",")).join(";")}`);
+        if (d2.ok) d = d2;
+      }
+    }
     render(d);
   } catch (e) {
     fail(String(e.message || e));
