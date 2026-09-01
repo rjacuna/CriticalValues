@@ -165,30 +165,10 @@ note proves the converse, and does so with an explicit construction.
   The $g$ produced satisfies $\deg g \geq 2$.
 \end{theorem}
 
-Two corollaries follow at once. The first is the divisibility statement in the
-form one usually wants it.
-
-\begin{cor}\label{C2}
-  With $g$ as in Theorem \ref{T1}, write $g' = c \prod_{i} g_{i}$ with each
-  $g_{i}$ irreducible in $\Z[X]$ and $c \in \Z$. Then $g_{i}^{2} \mid f \circ g$
-  for at least one $i$.
-\end{cor}
-
-\begin{proof}
-  $H$ is irreducible, hence prime in the unique factorization domain $\Z[X]$,
-  and $\deg H \geq 1$, so $H \nmid c$ (as a constant polynomial). From $H \mid c \prod_{i} g_{i}$ we get
-  $H \mid g_{i}$ for some $i$; two irreducibles with one dividing the other are
-  associates, and associates have associate squares, so
-  $g_{i}^{2} \mid H^{2} \mid f \circ g$.
-\end{proof}
-
-The second is the statement in the title.
+The corollary is the statement in the title.
 
 \begin{cor}\label{C3}
-  For every $\alpha \in \overline{\Q}$ there are $g \in \Z[X]$ and
-  $\beta \in \overline{\Q}$ with $g(\beta) = \alpha$ and $g'(\beta) = 0$.
-  Consequently the set of critical values of nonconstant integer polynomials is
-  exactly $\overline{\Q}$.
+  The set of critical values is exactly $\overline{\Q}$.
 \end{cor}
 
 The point of the proof below is what it does \emph{not} use. One expects a
@@ -684,7 +664,7 @@ theorem main (f : Z[X]) (hf : 1 <= f.natDegree) :
 
 \noindent
 with a strengthened form carrying $2 \leq \deg g$ and $1 \leq \deg H$, and with
-Corollaries \ref{C2} and \ref{C3} proved from it. Every result depends only on
+Corollary \ref{C3} proved from it. Every result depends only on
 the three standard axioms \texttt{propext}, \texttt{Classical.choice} and
 \texttt{Quot.sound}.
 
