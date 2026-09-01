@@ -22,12 +22,16 @@
 -- checks along with the answer.
 module Web (solve) where
 
-import Data.List (intercalate)
+import Data.Complex (Complex(..), magnitude)
+import Data.List (intercalate, minimumBy)
+import Data.Ord (comparing)
 import GHC.Wasm.Prim
 import Poly
 import Factor (Strategy(..))
 import Construct
 import Verify
+import Roots
+import Radicals
 
 foreign export javascript "solve" solve :: JSString -> IO JSString
 
@@ -57,7 +61,10 @@ run input =
     (f, mh)
       | coeff f 0 == 0 -> degenerate f
       | otherwise ->
-          case maybe (setupExists Irreducible f) (setupOfFactor f) mh of
+          -- h supplied  -> FLINT chose it (the default path)
+          -- h absent     -> squarefree part: no factoring, and deg H = deg f,
+          --                 so a single g covers *every* root of f (--dev)
+          case maybe (setupExists SquareFree f) (setupOfFactor f) mh of
             Left e  -> err e
             Right s -> ok s
 
@@ -84,7 +91,25 @@ ok s = obj
   , ("degG",   jstr (show (deg (setG s))))
   , ("digitsG", jstr (show (digitsOf (setG s))))
   , ("checks", jchecks (checks s))
+  , ("roots",  jroots s)
   ]
+
+-- | Every root of `f`, with the matching critical point `β = α / M`, and the
+-- closed form when the degree allows one. The radical branch is matched to the
+-- numeric root rather than assumed from branch order.
+jroots :: Setup -> String
+jroots s = "[" ++ intercalate "," (map one rs) ++ "]"
+  where
+    f    = setF s
+    m    = fromInteger (setM s) :: Double
+    rs   = roots f
+    brs  = radicals f
+    one a = obj
+      [ ("alpha", jstr (showComplex 7 a))
+      , ("beta",  jstr (showComplex 7 (a / (m :+ 0))))
+      , ("rad",   maybe "null" (jstr . brLatex . nearest a) brs)
+      ]
+    nearest a = minimumBy (comparing (\b -> magnitude (brValue b - a)))
 
 digitsOf :: Poly -> Int
 digitsOf p | isZero p  = 1
@@ -101,7 +126,19 @@ jstr :: String -> String
 jstr t = "\"" ++ concatMap esc t ++ "\""
   where esc '"'  = "\\\""
         esc '\\' = "\\\\"
-        esc c    = [c]
+        esc '\n' = "\\n"
+        esc '\r' = "\\r"
+        esc '\t' = "\\t"
+        esc c
+          | c < ' '   = "\\u" ++ pad (showHexish (fromEnum c))
+          | otherwise = [c]
+        pad h = replicate (4 - length h) '0' ++ h
+        showHexish 0 = "0"
+        showHexish n = go n ""
+          where go 0 acc = acc
+                go k acc = go (k `div` 16) (hexDigit (k `mod` 16) : acc)
+                hexDigit d | d < 10    = toEnum (fromEnum '0' + d)
+                           | otherwise = toEnum (fromEnum 'a' + d - 10)
 
 jarr :: [String] -> String
 jarr xs = "[" ++ intercalate "," (map jstr xs) ++ "]"
