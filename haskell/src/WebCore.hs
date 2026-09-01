@@ -122,19 +122,28 @@ jsetup s = obj
 -- reducible @f@ gets a different @g@ per factor, and @β = α/M@ uses that
 -- factor's own @M@. The match is numeric because the roots are; the winner
 -- beats the others by orders of magnitude in practice.
+--
+-- The closed form comes from that factor, not from @f@. @deg α@ is the degree
+-- of its minimal polynomial, so a rational root of a quartic gets a rational
+-- expression and not the Ferrari formula: @(x³+x−2)(x+2)@ factors as
+-- @(x−1)(x²+x+2)(x+2)@, whose roots deserve @x = 1@, the quadratic formula, and
+-- @x = −2@ respectively. It also means a degree-6 @f@ splitting into two cubics
+-- gets Cardano twice rather than nothing at all.
 jroots :: Poly -> [Setup] -> String
 jroots f ss = "[" ++ intercalate "," (map one (roots f)) ++ "]"
   where
-    brs = radicals f
+    -- one radical table per factor, not per root
+    brss = [ radicals (setH s) | s <- ss ]
     one a = obj
-      [ ("alpha", jstr (showComplex 7 a))
-      , ("beta",  jstr (showComplex 7 (a / (mOf a :+ 0))))
-      , ("setup", jstr (show (idxOf a)))
-      , ("rad",   maybe "null" (jstr . brLatex . nearest a) brs)
+      [ ("alpha",  jstr (showComplex 7 a))
+      , ("beta",   jstr (showComplex 7 (a / (fromInteger (setM (ss !! i)) :+ 0))))
+      , ("setup",  jstr (show i))
+      , ("degree", jstr (show (deg (setH (ss !! i)))))
+      , ("rad",    maybe "null" (jstr . brLatex . nearest a) (brss !! i))
       ]
+      where i = idxOf a
     idxOf a = snd (minimumBy (comparing fst)
                 [ (magnitude (evalC (setH s) a), i) | (i, s) <- zip [(0 :: Int) ..] ss ])
-    mOf a   = fromInteger (setM (ss !! idxOf a)) :: Double
     nearest a = minimumBy (comparing (\b -> magnitude (brValue b - a)))
 
 evalC :: Poly -> Complex Double -> Complex Double

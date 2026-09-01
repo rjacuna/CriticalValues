@@ -163,12 +163,18 @@ function renderSetup(d, s) {
 
   const ck = $("#checks");
   ck.innerHTML = "";
-  for (const c of s.checks) {
+  const rows = [...s.checks];
+  if (s.HIrred !== undefined && s.HIrred !== null)
+    rows.push({ name: "Lemma D : H is irreducible   (FLINT)", ok: s.HIrred });
+  for (const c of rows) {
     const row = document.createElement("div");
     row.className = "chk " + (c.ok ? "text-success" : "text-danger fw-bold");
     row.textContent = (c.ok ? "ok   " : "FAIL ") + c.name;
     ck.append(row);
   }
+  $("#gmeta").textContent =
+    `degree ${s.degG}, ${s.digitsG}-digit coefficients` +
+    (s.HIrred === undefined ? "" : `  ·  ${rows.length} checks`);
 }
 
 // ---------------------------------------------------------------- run
@@ -204,6 +210,15 @@ async function compute() {
       if (factors.length) {
         const d2 = await backend.solve(`${d.f.join(",")}|${factors.map((h) => h.join(",")).join(";")}`);
         if (d2.ok) d = d2;
+      }
+      // Verify irreducibility of H rather than assuming it. This cannot live in
+      // the 22 checks: crit.wasm is base-only and Kronecker would choke on H's
+      // coefficients, so it is asked of FLINT here. Counting factors is not
+      // arithmetic — FLINT does the work.
+      busy(true, "verifying H is irreducible…");
+      for (const s of d.setups || []) {
+        try { s.HIrred = fl.factor(s.H).length === 1; }
+        catch { s.HIrred = null; }
       }
     }
     render(d);
