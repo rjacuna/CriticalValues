@@ -269,14 +269,16 @@ Each line below is a closed identity, checkable by expansion.
 \end{example}
 
 \begin{example}[$f = x^{3}-x-1$]
-  The construction gives $M = 23$ and a sextic. A hand-tuned quintic also
-  witnesses the \emph{statement}, and is a useful independent check of it:
+  The construction gives $M = 23$ and a sextic. But it is not unique: any choice
+  of $\rho$ will do, and moreover, for $\alpha$ to be a critical value, the
+  critical point need not be $\alpha/k$ for any $k \in \Z$. Take for example
   \[
     g = -24334x^{5} + 39675x^{4} - 26450x^{3} + 9085x^{2} - 1610x + 118,
     \qquad F = 23x^{3} - 23x^{2} + 8x - 1,
   \]
   with $g' = -230\,(23x-7)F$ and $F^{2} \mid f \circ g$, the cofactor having
-  degree $9$.
+  degree $9$. Here $F$ has a nonzero $x^{2}$ coefficient, whereas $\alpha/k$ has
+  minimal polynomial $k^{3}x^{3} - kx - 1$.
 \end{example}
 
 \begin{example}[Dedekind's cubic]\label{Ex85}
