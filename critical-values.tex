@@ -306,13 +306,14 @@ the hypotheses of Theorem \ref{T1}, the agent found $g$ for a general linear
 polynomial (which one can do by hand), then for a general quadratic, then for a
 general cubic, and finally gave the formula for $g$ for arbitrary $f$.
 Previously, all agents I tried failed to construct $g$ for $x^{3}-x-1$.
-
 The development above has been formalized in Lean~4 \cite{lean4} against
-Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}.
+Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}. An online
+calculator is provided for the reader to verify the construction \cite{app}. It
+runs the construction in the browser and, if $\alpha$ is real, generates a
+Desmos plot that allows the reader to check visually that it is a critical
+value.
 
-An online calculator is provided for the reader to verify the construction
-\cite{app}. It runs the construction in the browser, on the same compiled
-Haskell, and checks its own output.
+\printbibliography
 
 \begin{center}
   \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
@@ -321,8 +322,6 @@ Haskell, and checks its own output.
     \small the repository & \small the calculator
   \end{tabular}
 \end{center}
-
-\printbibliography
 
 \end{document}
 %%% Local Variables:
