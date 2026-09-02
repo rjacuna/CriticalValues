@@ -202,10 +202,11 @@ together with this $H$.
 \fbox{%
   \begin{minipage}{0.93\textwidth}
     \textbf{Verification.} Let $\beta = \theta/M$, a root of $H$. Since
-    $H(0) = 1$, the constant terms in $W$ cancel, and every other coefficient
-    carries $M^{j}$ with $\rho\, h(0) \mid M$, so $W \in \Z[x]$ and $W(0) = 0$;
-    likewise $H, g \in \Z[x]$. Then $W(\beta) = -v(\theta)/\rho = -1/h'(\theta)$,
-    so
+    $M = \rho\,h(0)$, both $\rho$ and $h(0)$ divide $M$: so $H \in \Z[x]$, with
+    $H(0) = 1$ and $H_{j} = h_{j}\rho^{j}h(0)^{j-1}$ for $j \geq 1$; and in
+    $\rho W = v(0)H - v(Mx)$ the constant terms cancel while $\rho$ divides both
+    $H_{j}$ and $M^{j}$ for $j \geq 1$, so $W \in \Z[x]$ with $W(0) = 0$. Hence
+    $g \in \Z[x]$. Then $W(\beta) = -v(\theta)/\rho = -1/h'(\theta)$, so
     \[
       g(\beta) = \theta, \qquad
       g'(\beta) = M\bigl(1 + h'(\theta)W(\beta)\bigr) = 0 .
