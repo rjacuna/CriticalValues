@@ -69,7 +69,7 @@
 \usepackage{enumitem}
 \usepackage{pdfpages}
 \usepackage{mathdots}
-%  Underline, for the proof marker.  normalem: leave \emph as italics.
+%  Underlines, for the proof marker.  normalem: leave \emph as italics.
 \usepackage[normalem]{ulem}
 \usepackage{polynom}
 \usepackage[makeroom]{cancel}
@@ -91,7 +91,7 @@
 \theoremstyle{plain}
 % Proofs open with an underlined marker and close with a black box.
 \newenvironment{pf}{%
-  \par\addvspace{\medskipamount}\noindent\uline{pf.}\ \ignorespaces}{%
+  \par\addvspace{\medskipamount}\noindent\uwave{pf.}\ \ignorespaces}{%
   \unskip\nobreak\hfill$\blacksquare$\par\addvspace{\medskipamount}}
 
 % Bend symbol
@@ -179,6 +179,19 @@ The corollary is the statement in the title.
 \begin{cor}\label{C3}
   The set of critical values is exactly $\overline{\Q}$.
 \end{cor}
+
+\begin{pf}
+  Let $\alpha$ be a critical value, so that $g(\beta) = \alpha$ and
+  $g'(\beta) = 0$ for some $g$ and $\beta$, and let $f = m_{\alpha}$ be the
+  minimal polynomial of $\alpha$. Then $(f \circ g)(\beta) = 0$ and
+  $(f \circ g)'(x) = f'(g(x))\,g'(x)$, so $\beta$ is a double root of
+  $f \circ g \in \Z[x]$; hence $m_{\beta} \mid g'$ and
+  $m_{\beta}^{2} \mid f \circ g$. Conversely, take $F$ and $g$ as in
+  Theorem \ref{T1} for $f = m_{\alpha}$. A root $\beta$ of $F$ has
+  $g'(\beta) = 0$ and $f(g(\beta)) = 0$, so $g(\beta)$ is a conjugate of
+  $\alpha$; as $g$ has integer coefficients, conjugating makes $\alpha$ itself a
+  critical value.
+\end{pf}
 
 \section{The construction}\label{Scons}
 
