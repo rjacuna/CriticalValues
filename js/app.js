@@ -172,7 +172,10 @@ function render(d) {
     list.append(el);
   });
 
-  select(0);
+  // Open on a real root when f has one: the visual check is only offered for a
+  // real root, and landing on a complex one hides it before anybody has clicked.
+  const real = d.roots.findIndex((r) => !r.alpha.includes("i"));
+  select(real >= 0 ? real : 0);
 }
 
 // One setup per irreducible factor, so this follows the selected root.
