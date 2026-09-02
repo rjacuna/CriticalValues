@@ -53,7 +53,7 @@
 \newcommand\R{\mathbb{R}}
 \newcommand\C{\mathbb{C}}
 \newcommand\1{\mathbb{1}}
-% The dilation p(MX), used on every line of §3.
+% The dilation p(Mx), used on every line of §3.
 \newcommand\dil[1]{\widetilde{#1}}
 % breakable underscore, so long Lean identifiers can wrap in a table cell
 \newcommand\us{\_\discretionary{}{}{}}
@@ -139,10 +139,10 @@ sorting=ynt
     \begin{abstract}
       \noindent
       \justifying
-      For every nonconstant $f \in \Z[X]$ we construct $g \in \Z[X]$ and an
-      irreducible $H \in \Z[X]$ with $H \mid g'$ and $H^{2} \mid f \circ g$.
+      For every nonconstant $f \in \Z[x]$ we construct $g \in \Z[x]$ and an
+      irreducible $H \in \Z[x]$ with $H \mid g'$ and $H^{2} \mid f \circ g$.
       Equivalently, every algebraic number is a critical value of an integer
-      polynomial, so the set of critical values of $\Z[X]$ is exactly
+      polynomial, so the set of critical values of $\Z[x]$ is exactly
       $\overline{\Q}$. The construction is explicit. The proof was
       assisted by AI, and has been formalized in Lean.
     \end{abstract}
@@ -151,16 +151,16 @@ sorting=ynt
 
 \section{Introduction}
 
-A critical value of a nonconstant $g \in \Z[X]$ is a number $\alpha$ with
+A critical value of a nonconstant $g \in \Z[x]$ is a number $\alpha$ with
 $g(\beta) = \alpha$ and $g'(\beta) = 0$ for some $\beta$. Since $\overline{\Q}$ is
 closed under polynomial evaluation, every critical value is algebraic. This
 note proves the converse, and does so with an explicit construction.
 
 \begin{theorem}\label{T1}
-  Let $f \in \Z[X]$ be nonconstant. Then there exist $g, H \in \Z[X]$ with $H$
-  irreducible in $\Z[X]$ and $1 \leq \deg H$, such that
+  Let $f \in \Z[x]$ be nonconstant. Then there exist $g, H \in \Z[x]$ with $H$
+  irreducible in $\Z[x]$ and $1 \leq \deg H$, such that
   \[
-    H \mid g' \quad\text{and}\quad H^{2} \mid f \circ g \qquad \text{in }\Z[X].
+    H \mid g' \quad\text{and}\quad H^{2} \mid f \circ g \qquad \text{in }\Z[x].
   \]
   The $g$ produced satisfies $\deg g \geq 2$.
 \end{theorem}
@@ -173,31 +173,31 @@ The corollary is the statement in the title.
 
 \section{The construction}\label{Scons}
 
-Let $h \in \Z[X]$ be a primitive irreducible factor of $f$, of degree $n$, with
-root $\theta$. If $h = X$, take $g = X^{2}$ and $H = X$; then $H \mid g'$ and
+Let $h \in \Z[x]$ be a primitive irreducible factor of $f$, of degree $n$, with
+root $\theta$. If $h = x$, take $g = x^{2}$ and $H = x$; then $H \mid g'$ and
 $H^{2} \mid f \circ g$. Otherwise $h(0) \neq 0$, and since $\gcd(h,h') = 1$ in
-$\Q[X]$, the elimination ideal $(h,h') \cap \Z$ is a nonzero ideal of $\Z$; let
+$\Q[x]$, the elimination ideal $(h,h') \cap \Z$ is a nonzero ideal of $\Z$; let
 $\rho$ generate it,
 \[
   |\rho| = \min\bigl\{\,|c| \;:\; c \in (h,h') \cap \Z,\ c \neq 0 \,\bigr\},
-  \qquad u\,h + v\,h' = \rho \quad (u, v \in \Z[X]),
+  \qquad u\,h + v\,h' = \rho \quad (u, v \in \Z[x]),
 \]
-which the extended Euclidean algorithm in $\Q[X]$ produces on clearing
+which the extended Euclidean algorithm in $\Q[x]$ produces on clearing
 denominators, and set
 \[
   M = \rho\, h(0), \qquad
-  H(X) = \frac{h(MX)}{h(0)}, \qquad
-  W(X) = \frac{v(0)H(X) - v(MX)}{\rho} .
+  H(x) = \frac{h(Mx)}{h(0)}, \qquad
+  W(x) = \frac{v(0)H(x) - v(Mx)}{\rho} .
 \]
 The polynomial claimed by Theorem \ref{T1} is
 \[
-  \boxed{\; g(X) = MX + h(MX)\,W(X) \;}
+  \boxed{\; g(x) = Mx + h(Mx)\,W(x) \;}
 \]
 together with this $H$.
 
 \begin{theorem*}[restatement of Theorem \ref{T1}]
-  $H$ is irreducible in $\Z[X]$, and $H \mid g'$ and $H^{2} \mid f \circ g$ in
-  $\Z[X]$.
+  $H$ is irreducible in $\Z[x]$, and $H \mid g'$ and $H^{2} \mid f \circ g$ in
+  $\Z[x]$.
 \end{theorem*}
 
 \begin{center}
@@ -205,54 +205,54 @@ together with this $H$.
   \begin{minipage}{0.93\textwidth}
     \textbf{Verification.} Let $\beta = \theta/M$, a root of $H$. Since
     $H(0) = 1$, the constant terms in $W$ cancel, and every other coefficient
-    carries $M^{j}$ with $\rho\, h(0) \mid M$, so $W \in \Z[X]$ and $W(0) = 0$;
-    likewise $H, g \in \Z[X]$. Then $W(\beta) = -v(\theta)/\rho = -1/h'(\theta)$,
+    carries $M^{j}$ with $\rho\, h(0) \mid M$, so $W \in \Z[x]$ and $W(0) = 0$;
+    likewise $H, g \in \Z[x]$. Then $W(\beta) = -v(\theta)/\rho = -1/h'(\theta)$,
     so
     \[
       g(\beta) = \theta, \qquad
       g'(\beta) = M\bigl(1 + h'(\theta)W(\beta)\bigr) = 0 .
     \]
     Hence $\beta$ is a double root of $f \circ g$, and $H$ is primitive
-    irreducible, so $H \mid g'$ and $H^{2} \mid f(g)$ in $\Z[X]$ by Gauss.
+    irreducible, so $H \mid g'$ and $H^{2} \mid f(g)$ in $\Z[x]$ by Gauss.
   \end{minipage}}
 \end{center}
 
 The computation uses $h(\theta) = 0$ and nothing else about $\theta$, so it runs
 at every root of $h$ at once: all $n$ conjugates are critical values of the same
 $g$, at the $n$ points $\theta_{i}/M$. That is what makes $H^{2}$, and not
-merely $(X - \beta)^{2}$, divide $f \circ g$.
+merely $(x - \beta)^{2}$, divide $f \circ g$.
 
 Only the relation $u h + v h' = \rho$ is used, so any nonzero element of
 $(h,h') \cap \Z$ serves --- $\operatorname{Res}(h,h')$ among them, which is a
 multiple of $\rho$. The generator is taken because $M = \rho\,h(0)$ multiplies
 into every coefficient of $H$, $W$ and $g$, so the smallest $\rho$ gives the
-smallest answer. On $h = X^{2}+1$ the resultant is $4$ against $\rho = 2$, and
+smallest answer. On $h = x^{2}+1$ the resultant is $4$ against $\rho = 2$, and
 on Dedekind's cubic below it is $2012$ against $1006$.
 
 \section{Examples}\label{Sex}
 
 Each line below is a closed identity, checkable by expansion.
 
-\begin{example}[$f = qX - p$, $p \neq 0$, $\gcd(p,q) = 1$]
-  Here $h' = q$ and $p = qX - h$, so $(h,h') \cap \Z = \Z$ and $\rho = 1$.
-  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = aX + b$; then
-  $h_{0} = -p$, $M = -p$, $H = qX + 1$, $W = X$, and
+\begin{example}[$f = qx - p$, $p \neq 0$, $\gcd(p,q) = 1$]
+  Here $h' = q$ and $p = qx - h$, so $(h,h') \cap \Z = \Z$ and $\rho = 1$.
+  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = ax + b$; then
+  $h_{0} = -p$, $M = -p$, $H = qx + 1$, $W = x$, and
   \[
-    g = -pqX^{2} - 2pX, \qquad
-    g' = -2p\,(qX+1), \qquad
-    f \circ g = -p\,(qX+1)^{2}.
+    g = -pqx^{2} - 2px, \qquad
+    g' = -2p\,(qx+1), \qquad
+    f \circ g = -p\,(qx+1)^{2}.
   \]
   Note $\deg v = n$: the minimal $\rho$ is not in general attainable with
   $\deg v < n$, which for this $h$ would force $q \mid \rho$.
 \end{example}
 
-\begin{example}[$f = X^{2}+1$]\label{Ex82}
-  With $u = 2$, $v = -X$, $\rho = 2$, $h_{0} = 1$, $M = 2$, $H = 4X^{2}+1$ and
-  $W = X$,
+\begin{example}[$f = x^{2}+1$]\label{Ex82}
+  With $u = 2$, $v = -x$, $\rho = 2$, $h_{0} = 1$, $M = 2$, $H = 4x^{2}+1$ and
+  $W = x$,
   \[
-    g = 4X^{3} + 3X, \qquad
-    g' = 3(4X^{2}+1), \qquad
-    f \circ g = (4X^{2}+1)^{2}(X^{2}+1).
+    g = 4x^{3} + 3x, \qquad
+    g' = 3(4x^{2}+1), \qquad
+    f \circ g = (4x^{2}+1)^{2}(x^{2}+1).
   \]
   Here $\deg g = 3 = n + 1$, the least degree any solution can have. The unit
   group $\mathcal{O}_{K}^{\times} = \{\pm 1, \pm i\}$
@@ -260,39 +260,39 @@ Each line below is a closed identity, checkable by expansion.
   $1+i$.
 \end{example}
 
-\begin{example}[$f = X^{3}-2$]
-  With $u = 3$, $v = -X$, $\rho = -6$, $h_{0} = -2$, $M = 12$,
-  $H = 1 - 864X^{3}$ and $W = -2X$,
+\begin{example}[$f = x^{3}-2$]
+  With $u = 3$, $v = -x$, $\rho = -6$, $h_{0} = -2$, $M = 12$,
+  $H = 1 - 864x^{3}$ and $W = -2x$,
   \[
-    g = -3456X^{4} + 16X, \qquad g' = 16\,(1 - 864X^{3}).
+    g = -3456x^{4} + 16x, \qquad g' = 16\,(1 - 864x^{3}).
   \]
 \end{example}
 
-\begin{example}[$f = X^{3}-X-1$]
+\begin{example}[$f = x^{3}-x-1$]
   The construction gives $M = 23$ and a sextic. A hand-tuned quintic also
   witnesses the \emph{statement}, and is a useful independent check of it:
   \[
-    g = -24334X^{5} + 39675X^{4} - 26450X^{3} + 9085X^{2} - 1610X + 118,
-    \qquad H = 23X^{3} - 23X^{2} + 8X - 1,
+    g = -24334x^{5} + 39675x^{4} - 26450x^{3} + 9085x^{2} - 1610x + 118,
+    \qquad H = 23x^{3} - 23x^{2} + 8x - 1,
   \]
-  with $g' = -230\,(23X-7)H$ and $H^{2} \mid f \circ g$, the cofactor having
+  with $g' = -230\,(23x-7)H$ and $H^{2} \mid f \circ g$, the cofactor having
   degree $9$.
 \end{example}
 
 \begin{example}[Dedekind's cubic]\label{Ex85}
-  $f = X^{3} - X^{2} - 2X - 8$, the standard example of a field whose ring of
+  $f = x^{3} - x^{2} - 2x - 8$, the standard example of a field whose ring of
   integers is not monogenic: $2$ is a common index divisor
-  \cite{dedekind1878}. With $u = 21X - 125$, $v = -7X^{2} + 44X - 3$,
+  \cite{dedekind1878}. With $u = 21x - 125$, $v = -7x^{2} + 44x - 3$,
   $\rho = 1006$, $h_{0} = -8$, $M = -8048$,
   \[
-    H = 65158925824X^{3} + 8096288X^{2} - 2012X + 1, \qquad
-    W = -194310912X^{3} + 426544X^{2} + 358X,
+    H = 65158925824x^{3} + 8096288x^{2} - 2012x + 1, \qquad
+    W = -194310912x^{3} + 426544x^{2} + 358x,
   \]
   \[
     \begin{aligned}
-      g = {}& 101288722414414331904X^{6} - 209759614012620800X^{5} \\
-            & {} - 217370176548864X^{4} - 14767629312X^{3}
-                 + 2350016X^{2} - 10912X .
+      g = {}& 101288722414414331904x^{6} - 209759614012620800x^{5} \\
+            & {} - 217370176548864x^{4} - 14767629312x^{3}
+                 + 2350016x^{2} - 10912x .
     \end{aligned}
   \]
 \end{example}
