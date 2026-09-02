@@ -176,10 +176,10 @@ The corollary is the statement in the title.
 Let $h \in \Z[x]$ be a primitive irreducible factor of $f$, of degree $n$, with
 root $\theta$. If $h = x$, then $g = x^{2}$ and $H = x$ work. Otherwise
 $h(0) \neq 0$, and since $\gcd(h,h') = 1$ in $\Q[x]$, the elimination ideal
-$(h,h') \cap \Z$ is a nonzero ideal of $\Z$; let $\rho$ generate it,
+$(h,h') \cap \Z$ is nonzero; let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$,
+be such that
 \[
-  |\rho| = \min\bigl\{\,|c| \;:\; c \in (h,h') \cap \Z,\ c \neq 0 \,\bigr\},
-  \qquad u\,h + v\,h' = \rho \quad (u, v \in \Z[x]),
+  u\,h + v\,h' = \rho ,
 \]
 which the extended Euclidean algorithm in $\Q[x]$ produces on clearing
 denominators, and set
@@ -221,12 +221,11 @@ at every root of $h$ at once: all $n$ conjugates are critical values of the same
 $g$, at the $n$ points $\theta_{i}/M$. That is what makes $H^{2}$, and not
 merely $(x - \beta)^{2}$, divide $f \circ g$.
 
-Only the relation $u h + v h' = \rho$ is used, so any nonzero element of
-$(h,h') \cap \Z$ serves --- $\operatorname{Res}(h,h')$ among them, which is a
-multiple of $\rho$. The generator is taken because $M = \rho\,h(0)$ multiplies
-into every coefficient of $H$, $W$ and $g$, so the smallest $\rho$ gives the
-smallest answer. On $h = x^{2}+1$ the resultant is $4$ against $\rho = 2$, and
-on Dedekind's cubic below it is $2012$ against $1006$.
+Any $\rho$ will do, but $M = \rho\,h(0)$ multiplies into every coefficient of
+$H$, $W$ and $g$, so the smallest gives the smallest answer: the generator of
+$(h,h') \cap \Z$, the reduced resultant, of which $\operatorname{Res}(h,h')$ is
+a multiple. On $h = x^{2}+1$ the generator is $2$ against a resultant of $4$,
+and on Dedekind's cubic below $1006$ against $2012$.
 
 \section{Examples}\label{Sex}
 
@@ -241,8 +240,6 @@ Each line below is a closed identity, checkable by expansion.
     g' = -2p\,(qx+1), \qquad
     f \circ g = -p\,(qx+1)^{2}.
   \]
-  Note $\deg v = n$: the minimal $\rho$ is not in general attainable with
-  $\deg v < n$, which for this $h$ would force $q \mid \rho$.
 \end{example}
 
 \begin{example}[$f = x^{2}+1$]\label{Ex82}
