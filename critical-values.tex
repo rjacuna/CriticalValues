@@ -64,6 +64,7 @@
 \usepackage[dvipsnames]{xcolor}
 
 % Miscellaneous
+\usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{tikz-cd}
 \usepackage{enumitem}
@@ -296,21 +297,22 @@ Each line below is a closed identity, checkable by expansion.
   \]
 \end{example}
 
-\section{Formalization}\label{Sformal}
+\section{Formalization and web application}\label{Sformal}
 
 The development above has been formalized in Lean~4 \cite{lean4} against
-Mathlib \cite{mathlib}, in about $1{,}200$ lines. The main statement is
+Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}.
 
-\begin{lstlisting}[language=,caption={}]
-theorem main (f : Z[X]) (hf : 1 <= f.natDegree) :
-    exists g H : Z[X], Irreducible H /\ H | derivative g /\ H^2 | f.comp g
-\end{lstlisting}
+An online calculator is provided for the reader to verify the construction
+\cite{app}. It runs the construction in the browser, on the same compiled
+Haskell, and checks its own output.
 
-\noindent
-with a strengthened form carrying $2 \leq \deg g$ and $1 \leq \deg H$, and with
-Corollary \ref{C3} proved from it. Every result depends only on the three
-standard axioms \texttt{propext}, \texttt{Classical.choice} and
-\texttt{Quot.sound}.
+\begin{center}
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \includegraphics[width=0.2\textwidth]{qr-repo.png} &
+    \includegraphics[width=0.2\textwidth]{qr-site.png} \\[4pt]
+    \small the repository & \small the calculator
+  \end{tabular}
+\end{center}
 
 \printbibliography
 
