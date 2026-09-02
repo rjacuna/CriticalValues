@@ -212,12 +212,15 @@ together with this $F$.
   with $k < n$, so it divides $v(0)F(x) - v(Mx)$ and $W \in \Z[x]$. Therefore
   $g$ is an integral polynomial.
 
-  Let $\beta = \alpha/M$, a root of $F$. Then
-  $W(\beta) = -v(\alpha)/\rho = -1/f'(\alpha)$, so
-  \[
-    g(\beta) = \alpha, \qquad
-    g'(\beta) = M\bigl(1 + f'(\alpha)W(\beta)\bigr) = 0 .
-  \]
+  Let $\beta = \alpha/M$, a root of $F$; therefore $g(\beta) = \alpha$, and
+  $\rho W(\beta) = -v(\alpha)$. Then
+  \begin{align*}
+    g'(\alpha/M)
+      &= M + \rho\,a_{n}f'(\alpha)\,W(\alpha/M)
+         + \cancel{f(\alpha)}\,W'(\alpha/M) \\
+      &= M - a_{n}f'(\alpha)v(\alpha) = 0 ,
+  \end{align*}
+  because $u(\alpha)\cancel{f(\alpha)} + v(\alpha)f'(\alpha) = \rho$.
   Hence $\beta$ is a double root of $f \circ g$, and $F$ is primitive
   irreducible, so $F \mid g'$ and $F^{2} \mid f \circ g$ by Gauss.
 \end{pf}
