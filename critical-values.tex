@@ -251,26 +251,24 @@ Each line below is a closed identity, checkable by expansion.
   \]
 \end{example}
 
-\begin{example}[$f = x^{2}+1$]\label{Ex82}
-  With $u = 2$, $v = -x$, $\rho = 2$, $f(0) = 1$, $M = 2$, $F = 4x^{2}+1$ and
-  $W = x$,
+\begin{example}[$f = ax^{2} + bx + c$]\label{Exquad}
+  This is irreducible of degree $2$ exactly when $a \neq 0$, $\gcd(a,b,c) = 1$,
+  and $D := b^{2} - 4ac$ is not a square. Since $(f')^{2} = 4af + D$,
   \[
-    g = 4x^{3} + 3x, \qquad
-    g' = 3(4x^{2}+1), \qquad
-    f \circ g = (4x^{2}+1)^{2}(x^{2}+1).
+    \rho = \operatorname{Res}(f,f') = -aD, \qquad u = 4a^{2}, \qquad v = -af',
   \]
-  Here $\deg g = 3 = n + 1$, the least degree any solution can have. The unit
-  group $\mathcal{O}_{K}^{\times} = \{\pm 1, \pm i\}$
-  has rank $0$, and it is $\Z[i/2] = \Z[i][1/2]$ that supplies the needed unit
-  $1+i$.
-\end{example}
+  so $M = -acD$ and
+  \[
+    F = a^{3}cD^{2}x^{2} - abD\,x + 1, \qquad
+    W = a^{3}bcD\,x^{2} - a(b^{2}-2ac)\,x ,
+  \]
+  \[
+    g = a^{6}bc^{3}D^{3}x^{4} - 2a^{4}c^{2}(b^{2}-ac)D^{2}x^{3}
+        + a^{2}bc(b^{2}-ac)D\,x^{2} - 2ac(b^{2}-3ac)\,x ,
+  \]
+  with $g' = 2ac\bigl(2a^{2}bcD\,x - (b^{2}-3ac)\bigr)F$. For $b = 0$ the
+  quartic term drops and $\deg g = 3 = n+1$, the least any solution can have.
 
-\begin{example}[$f = x^{3}-2$]
-  With $u = 3$, $v = -x$, $\rho = -6$, $f(0) = -2$, $M = 12$,
-  $F = 1 - 864x^{3}$ and $W = -2x$,
-  \[
-    g = -3456x^{4} + 16x, \qquad g' = 16\,(1 - 864x^{3}).
-  \]
 \end{example}
 
 \begin{example}[$f = x^{3}-x-1$]
