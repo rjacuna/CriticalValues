@@ -1,0 +1,292 @@
+% arXiv version of critical-values.tex.
+%
+% arXiv processes submissions with LaTeX/pdfLaTeX and does not run XeTeX, so
+% this file replaces the fontspec/unicode-math setup of the original with a
+% pdfLaTeX one and carries no system fonts. Palatino text with Euler math keeps
+% the original's colour; the body below is otherwise identical.
+%
+% The bibliography is inlined as thebibliography rather than left to
+% biblatex+biber, so no .bbl has to be shipped or version-matched.
+%
+% Build: pdflatex critical-values-arxiv (twice, for the cross-references).
+\documentclass[10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newpxtext}    % Palatino-like text, in place of Miller Display
+\usepackage{amsmath}
+\usepackage{newpxmath}    % Palatino-matched italic math
+% Not eulervm: the original loads it but unicode-math overrides it, so the
+% XeLaTeX build actually sets math in Latin Modern Math -- italic letters.
+% Euler here would set them upright and look nothing like the original.
+
+\usepackage{geometry}
+\geometry{letterpaper, margin=1in}
+\renewcommand{\baselinestretch}{1.2}
+
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+  pdfauthor={RJ Acu\~na},
+  pdftitle={Every Algebraic Number is a Critical Value of an Integer Polynomial},
+  pdflang=en-US,
+  colorlinks=true,
+  urlcolor = blue,
+  linkcolor = blue,
+  citecolor = blue}
+
+\newcommand\Z{\mathbb{Z}}
+\newcommand\Q{\mathbb{Q}}
+
+\usepackage{graphicx}
+\usepackage[normalem]{ulem}
+\usepackage[makeroom]{cancel}
+
+% newpxmath defines \openbox and so does amsthm; let the latter win.
+\let\openbox\relax
+\usepackage{amsthm}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem*{theorem*}{Theorem}
+\newtheorem{cor}{Corollary}
+\theoremstyle{remark}
+\newtheorem{example}{Example}
+\theoremstyle{plain}
+
+% Proofs open with a wavy-underlined marker and close with a black box.
+\newenvironment{pf}{%
+  \par\addvspace{\medskipamount}\noindent\uwave{pf.}\ \ignorespaces}{%
+  \unskip\nobreak\hfill$\blacksquare$\par\addvspace{\medskipamount}}
+
+\usepackage{microtype}
+\microtypesetup{protrusion=false}
+\usepackage{nopageno}
+\usepackage{ragged2e}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textsc Every Algebraic Number is a
+    Critical Value of an Integer Polynomial}
+
+  {by RJ Acu\~na}
+\end{center}
+
+\begin{center}
+  \begin{minipage}{0.85\textwidth}
+    \begin{abstract}
+      \noindent
+      \justifying
+      For every irreducible $f \in \Z[x]$ of positive degree we construct
+      $g \in \Z[x]$ and an irreducible $F \in \Z[x]$ with $F \mid g'$ and
+      $F^{2} \mid f \circ g$.
+      Equivalently, every algebraic number is a critical value of an integer
+      polynomial, so the set of critical values of $\Z[x]$ is exactly
+      $\overline{\Q}$. The construction is explicit. The proof was
+      assisted by AI, and has been formalized in Lean.
+    \end{abstract}
+  \end{minipage}
+\end{center}
+
+\section{Introduction}
+
+A critical value of a nonconstant $g \in \Z[x]$ is a number $\alpha$ with
+$g(\beta) = \alpha$ and $g'(\beta) = 0$ for some $\beta$. Since $\overline{\Q}$ is
+closed under polynomial evaluation, every critical value is algebraic.
+Johannes Walcher posed the problem of establishing the reverse implication.
+This note solves Walcher's problem with an explicit construction.
+
+\begin{theorem}\label{T1}
+  Let $f$ be an irreducible integral polynomial of positive degree. Then there
+  exist $F$ and $g$ in $\Z[x]$, with $F$ irreducible and of positive degree,
+  such that
+  \[
+    F \mid g' \quad\text{and}\quad F^{2} \mid f \circ g .
+  \]
+\end{theorem}
+
+The corollary is the statement in the title.
+
+\begin{cor}\label{C3}
+  The set of critical values is exactly $\overline{\Q}$.
+\end{cor}
+
+\begin{pf}
+  Write $f = m_{\alpha}$. If $g(\beta) = \alpha$ and $g'(\beta) = 0$ then
+  $\beta$ is a double root of $f \circ g$, since $(f \circ g)' = (f' \circ g)\,g'$;
+  so $m_{\beta} \mid g'$ and $m_{\beta}^{2} \mid f \circ g$. Conversely take $F$
+  and $g$ from Theorem \ref{T1}: a root $\beta$ of $F$ has $g'(\beta) = 0$ and
+  $f(g(\beta)) = 0$, so $g(\beta)$ is a conjugate of $\alpha$, and conjugation
+  gives $\alpha$ itself.
+\end{pf}
+
+\section{The construction}\label{Scons}
+
+Let $f$ be irreducible of degree $n \geq 1$ and $\alpha$ a root. Write
+$f(x) = \sum_{k=0}^{n} a_{k}x^{n-k}$, so that $a_{n} = f(0)$. If $f = x$, then
+$g = x^{2}$ and $F = x$ work. Otherwise $f(0) \neq 0$, and since
+$\gcd(f,f') = 1$ in $\Q[x]$, the elimination ideal $(f,f') \cap \Z$ is nonzero;
+let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$, be such that
+$u\,f + v\,f' = \rho$, and set $M := \rho\,a_{n}$, $F(x) := f(Mx)/a_{n}$ and
+$W(x) := \bigl(v(0)F(x) - v(Mx)\bigr)/\rho$. The polynomial claimed by
+Theorem \ref{T1} is
+\begin{equation}\label{Eg}
+  g(x) := Mx + f(Mx)\,W(x).
+\end{equation}
+
+\begin{theorem*}[restatement of Theorem \ref{T1}]
+  $F$ is irreducible, and $F \mid g'$ and $F^{2} \mid f \circ g$.
+\end{theorem*}
+
+\begin{pf}
+  Write $F(x) = \sum_{k=0}^{n} A_{k}x^{n-k}$. From $A_{k} = a_{k}M^{n-k}/a_{n}$
+  we get $A_{n} = 1$ and
+  $A_{k} = a_{k}\rho^{\,n-k}a_{n}^{\,n-k-1}$ for $k < n$, so $F \in \Z[x]$ with
+  $F(0) = 1$, which gives $W(0) = 0$. And $\rho$ divides $M$ and every $A_{k}$
+  with $k < n$, so it divides $v(0)F(x) - v(Mx)$ and $W \in \Z[x]$. Therefore
+  $g$ is an integral polynomial.
+
+  Let $\beta = \alpha/M$, a root of $F$; therefore $g(\beta) = \alpha$, and
+  $\rho W(\beta) = -v(\alpha)$. Then
+  \begin{align*}
+    g'(\alpha/M)
+      &= M + \rho\,a_{n}f'(\alpha)\,W(\alpha/M)
+         + \cancel{f(\alpha)}\,W'(\alpha/M) \\
+      &= M - a_{n}f'(\alpha)v(\alpha) = 0 ,
+  \end{align*}
+  because $u(\alpha)\cancel{f(\alpha)} + v(\alpha)f'(\alpha) = \rho$.
+  Hence $\beta$ is a double root of $f \circ g$, and $F$ is primitive
+  irreducible, so $F \mid g'$ and $F^{2} \mid f \circ g$ by Gauss.
+\end{pf}
+
+Any $\rho$ will do, but $M = \rho\,a_{n}$ multiplies into every coefficient of
+$F$, $W$ and $g$, so the reduced resultant gives the answer with the smallest
+coefficients.
+
+\section{Examples}\label{Sex}
+
+Each line below is a closed identity, checkable by expansion.
+
+\begin{example}[$f = qx - p$, $p \neq 0$, $\gcd(p,q) = 1$]
+  Here $f' = q$ and $p = qx - f$, so $(f,f') \cap \Z = \Z$ and $\rho = 1$.
+  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = ax + b$; then
+  $f(0) = -p$, $M = -p$, $F = qx + 1$, $W = x$, and
+  \[
+    g = -pqx^{2} - 2px, \qquad
+    g' = -2p\,(qx+1), \qquad
+    f \circ g = -p\,(qx+1)^{2}.
+  \]
+\end{example}
+
+\begin{example}[$f = ax^{2} + bx + c$]\label{Exquad}
+  This is irreducible of degree $2$ exactly when $a \neq 0$, $\gcd(a,b,c) = 1$,
+  and $D := b^{2} - 4ac$ is not a square. Since $(f')^{2} = 4af + D$,
+  \[
+    \rho = \operatorname{Res}(f,f') = -aD, \qquad u = 4a^{2}, \qquad v = -af',
+  \]
+  so $M = -acD$ and
+  \[
+    F = a^{3}cD^{2}x^{2} - abD\,x + 1, \qquad
+    W = a^{3}bcD\,x^{2} - a(b^{2}-2ac)\,x ,
+  \]
+  \[
+    g = a^{6}bc^{3}D^{3}x^{4} - 2a^{4}c^{2}(b^{2}-ac)D^{2}x^{3}
+        + a^{2}bc(b^{2}-ac)D\,x^{2} - 2ac(b^{2}-3ac)\,x ,
+  \]
+  with $g' = 2ac\bigl(2a^{2}bcD\,x - (b^{2}-3ac)\bigr)F$. For $b = 0$ the
+  quartic term drops and $\deg g = 3 = n+1$, the least any solution can have.
+
+\end{example}
+
+\begin{example}[$f = x^{3}-x-1$]
+  The construction gives $M = 23$ and a sextic. But it is not unique: any choice
+  of $\rho$ will do, and moreover, for $\alpha$ to be a critical value, the
+  critical point need not be $\alpha/k$ for any $k \in \Z$. Take for example
+  \[
+    g = -24334x^{5} + 39675x^{4} - 26450x^{3} + 9085x^{2} - 1610x + 118,
+    \qquad F = 23x^{3} - 23x^{2} + 8x - 1,
+  \]
+  with $g' = -230\,(23x-7)F$ and $F^{2} \mid f \circ g$, the cofactor having
+  degree $9$. Here $F$ has a nonzero $x^{2}$ coefficient, whereas $\alpha/k$ has
+  minimal polynomial $k^{3}x^{3} - kx - 1$.
+\end{example}
+
+\begin{example}[Dedekind's cubic]\label{Ex85}
+  $f = x^{3} - x^{2} - 2x - 8$, the standard example of a field whose ring of
+  integers is not monogenic: $2$ is a common index divisor
+  \cite{dedekind1878}. With $u = 21x - 125$, $v = -7x^{2} + 44x - 3$,
+  $\rho = 1006$, $f(0) = -8$, $M = -8048$,
+  \[
+    F = 65158925824x^{3} + 8096288x^{2} - 2012x + 1, \qquad
+    W = -194310912x^{3} + 426544x^{2} + 358x,
+  \]
+  \[
+    \begin{aligned}
+      g = {}& 101288722414414331904x^{6} - 209759614012620800x^{5} \\
+            & {} - 217370176548864x^{4} - 14767629312x^{3}
+                 + 2350016x^{2} - 10912x .
+    \end{aligned}
+  \]
+\end{example}
+
+\section{Computerization}\label{Sformal}
+
+The construction of $g$ was provided by AI. However, the crucial step that
+allowed the agent to provide answers was my proof of Corollary \ref{C3}. Once I
+recast the problem as the search for an irreducible polynomial $F$ satisfying
+the hypotheses of Theorem \ref{T1}, the agent found $g$ for a general linear
+polynomial (which one can do by hand), then for a general quadratic, then for a
+general cubic, and finally gave the formula for $g$ for arbitrary $f$.
+Previously, all agents I tried failed to construct $g$ for $x^{3}-x-1$.
+The development above has been formalized in Lean~4 \cite{lean4} against
+Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}. An online
+calculator is provided for the reader to verify the construction \cite{app}. It
+runs the construction in the browser and, if $\alpha$ is real, generates a
+Desmos plot that allows the reader to check visually that it is a critical
+value.
+
+\begin{thebibliography}{Acu26b}
+
+\bibitem[Ded78]{dedekind1878}
+Richard Dedekind.
+\newblock \"{U}ber den Zusammenhang zwischen der Theorie der Ideale und der
+  Theorie der h\"{o}heren Kongruenzen.
+\newblock \emph{Abhandlungen der K\"{o}niglichen Gesellschaft der
+  Wissenschaften zu G\"{o}ttingen}, 1878.
+
+\bibitem[The20]{mathlib}
+The mathlib Community.
+\newblock The {L}ean Mathematical Library.
+\newblock In \emph{Certified Programs and Proofs (CPP 2020)}. ACM, 2020.
+
+\bibitem[MU21]{lean4}
+Leonardo de Moura and Sebastian Ullrich.
+\newblock The {L}ean 4 Theorem Prover and Programming Language.
+\newblock In \emph{Automated Deduction -- CADE 28}, Lecture Notes in Computer
+  Science. Springer, 2021.
+
+\bibitem[Acu26a]{app}
+RJ Acu\~{n}a.
+\newblock \emph{Critical values of integer polynomials: an online calculator}.
+\newblock \url{https://rjacuna.github.io/CriticalValues/}, 2026.
+
+\bibitem[Acu26b]{repo}
+RJ Acu\~{n}a.
+\newblock \emph{{CriticalValues}: paper, {L}ean~4 formalization and calculator}.
+\newblock \url{https://github.com/rjacuna/CriticalValues}, 2026.
+
+\end{thebibliography}
+
+\begin{center}
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \includegraphics[width=0.2\textwidth]{qr-repo.png} &
+    \includegraphics[width=0.2\textwidth]{qr-site.png} \\[4pt]
+    \small the repository & \small the calculator
+  \end{tabular}
+\end{center}
+
+\end{document}
