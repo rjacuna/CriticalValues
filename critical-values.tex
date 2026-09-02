@@ -186,20 +186,12 @@ $f(x) = \sum_{k=0}^{n} a_{k}x^{n-k}$, so that $a_{n} = f(0)$. If $f = x$, then
 $g = x^{2}$ and $F = x$ work. Otherwise $f(0) \neq 0$, and since
 $\gcd(f,f') = 1$ in $\Q[x]$, the elimination ideal $(f,f') \cap \Z$ is nonzero;
 let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$, be such that
-\[
-  u\,f + v\,f' = \rho ,
-\]
-and set
-\[
-  M = \rho\, a_{n}, \qquad
-  F(x) = \frac{f(Mx)}{a_{n}}, \qquad
-  W(x) = \frac{v(0)F(x) - v(Mx)}{\rho} .
-\]
-The polynomial claimed by Theorem \ref{T1} is
+$u\,f + v\,f' = \rho$, and set $M := \rho\,a_{n}$, $F(x) := f(Mx)/a_{n}$ and
+$W(x) := \bigl(v(0)F(x) - v(Mx)\bigr)/\rho$. The polynomial claimed by
+Theorem \ref{T1} is
 \begin{equation}\label{Eg}
-  g(x) = Mx + f(Mx)\,W(x),
+  g(x) := Mx + f(Mx)\,W(x).
 \end{equation}
-together with this $F$.
 
 \begin{theorem*}[restatement of Theorem \ref{T1}]
   $F$ is irreducible, and $F \mid g'$ and $F^{2} \mid f \circ g$.
