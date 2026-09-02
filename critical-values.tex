@@ -297,7 +297,15 @@ Each line below is a closed identity, checkable by expansion.
   \]
 \end{example}
 
-\section{Formalization and web application}\label{Sformal}
+\section{Computerization}\label{Sformal}
+
+The construction of $g$ was provided by AI. However, the crucial step that
+allowed the agent to provide answers was my proof of Corollary \ref{C3}. Once I
+recast the problem as the search for an irreducible polynomial $F$ satisfying
+the hypotheses of Theorem \ref{T1}, the agent found $g$ for a general linear
+polynomial (which one can do by hand), then for a general quadratic, then for a
+general cubic, and finally gave the formula for $g$ for arbitrary $f$.
+Previously, all agents I tried failed to construct $g$ for $x^{3}-x-1$.
 
 The development above has been formalized in Lean~4 \cite{lean4} against
 Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}.
