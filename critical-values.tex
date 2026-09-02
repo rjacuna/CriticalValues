@@ -192,7 +192,7 @@ let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$, be such that
 and set
 \[
   M = \rho\, a_{n}, \qquad
-  F(x) = \frac{f(Mx)}{a_{n}} = \sum_{k=0}^{n} A_{k}x^{n-k}, \qquad
+  F(x) = \frac{f(Mx)}{a_{n}}, \qquad
   W(x) = \frac{v(0)F(x) - v(Mx)}{\rho} .
 \]
 The polynomial claimed by Theorem \ref{T1} is
@@ -206,7 +206,8 @@ together with this $F$.
 \end{theorem*}
 
 \begin{pf}
-  From $A_{k} = a_{k}M^{n-k}/a_{n}$ we get $A_{n} = 1$ and
+  Write $F(x) = \sum_{k=0}^{n} A_{k}x^{n-k}$. From $A_{k} = a_{k}M^{n-k}/a_{n}$
+  we get $A_{n} = 1$ and
   $A_{k} = a_{k}\rho^{\,n-k}a_{n}^{\,n-k-1}$ for $k < n$, so $F \in \Z[x]$ with
   $F(0) = 1$, which gives $W(0) = 0$. And $\rho$ divides $M$ and every $A_{k}$
   with $k < n$, so it divides $v(0)F(x) - v(Mx)$ and $W \in \Z[x]$. Therefore
