@@ -174,12 +174,15 @@ The corollary is the statement in the title.
 \section{The construction}\label{Scons}
 
 Let $h \in \Z[X]$ be a primitive irreducible factor of $f$, of degree $n$, with
-root $\theta$ and $h(0) \neq 0$. Put
+root $\theta$ and $h(0) \neq 0$. Since $\gcd(h,h') = 1$ in $\Q[X]$, the
+elimination ideal $(h,h') \cap \Z$ is a nonzero ideal of $\Z$; let $\rho$
+generate it,
 \[
-  \rho = \operatorname{Res}(h,h') \in \Z, \qquad
-  v \in \Z[X], \quad \deg v < n, \quad v\,h' \equiv \rho \pmod{h},
+  |\rho| = \min\bigl\{\,|c| \;:\; c \in (h,h') \cap \Z,\ c \neq 0 \,\bigr\},
+  \qquad u\,h + v\,h' = \rho \quad (u, v \in \Z[X]),
 \]
-which the extended Euclidean algorithm produces, and set
+which the extended Euclidean algorithm in $\Q[X]$ produces on clearing
+denominators, and set
 \[
   M = \rho\, h(0), \qquad
   H(X) = \frac{h(MX)}{h(0)}, \qquad
@@ -218,24 +221,28 @@ at every root of $h$ at once: all $n$ conjugates are critical values of the same
 $g$, at the $n$ points $\theta_{i}/M$. That is what makes $H^{2}$, and not
 merely $(X - \beta)^{2}$, divide $f \circ g$.
 
-Only the congruence $v h' \equiv \rho \pmod h$ is used, so any nonzero $\rho$
-admitting one will serve; the resultant is simply the standard choice. Smaller
-choices give a smaller $g$, and the best available is the generator of
-$(h,h') \cap \Z$ --- see Example \ref{Ex82}, where $\rho = 2$ while
-$\operatorname{Res}(h,h') = 4$.
+Only the relation $u h + v h' = \rho$ is used, so any nonzero element of
+$(h,h') \cap \Z$ serves --- $\operatorname{Res}(h,h')$ among them, which is a
+multiple of $\rho$. The generator is taken because $M = \rho\,h(0)$ multiplies
+into every coefficient of $H$, $W$ and $g$, so the smallest $\rho$ gives the
+smallest answer. On $h = X^{2}+1$ the resultant is $4$ against $\rho = 2$, and
+on Dedekind's cubic below it is $2012$ against $1006$.
 
 \section{Examples}\label{Sex}
 
 Each line below is a closed identity, checkable by expansion.
 
-\begin{example}[$f = qX - p$, $p \neq 0$]
-  With $u = 0$, $v = 1$, $\rho = q$, $h_{0} = -p$, $M = -pq$, $H = q^{2}X + 1$
-  and $W = qX$,
+\begin{example}[$f = qX - p$, $p \neq 0$, $\gcd(p,q) = 1$]
+  Here $h' = q$ and $p = qX - h$, so $(h,h') \cap \Z = \Z$ and $\rho = 1$.
+  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = aX + b$; then
+  $h_{0} = -p$, $M = -p$, $H = qX + 1$, $W = X$, and
   \[
-    g = -pq^{3}X^{2} - 2pqX, \qquad
-    g' = -2pq\,(q^{2}X+1), \qquad
-    f \circ g = -p\,(q^{2}X+1)^{2}.
+    g = -pqX^{2} - 2pX, \qquad
+    g' = -2p\,(qX+1), \qquad
+    f \circ g = -p\,(qX+1)^{2}.
   \]
+  Note $\deg v = n$: the minimal $\rho$ is not in general attainable with
+  $\deg v < n$, which for this $h$ would force $q \mid \rho$.
 \end{example}
 
 \begin{example}[$f = X^{2}+1$]\label{Ex82}
@@ -246,9 +253,8 @@ Each line below is a closed identity, checkable by expansion.
     g' = 3(4X^{2}+1), \qquad
     f \circ g = (4X^{2}+1)^{2}(X^{2}+1).
   \]
-  Here $\deg g = 3 = n + 1$, the least degree any solution can have. Note
-  also $\rho = 2$ while $\operatorname{Res}(h,h') = 4$: the reduced resultant is
-  the better choice. The unit group $\mathcal{O}_{K}^{\times} = \{\pm 1, \pm i\}$
+  Here $\deg g = 3 = n + 1$, the least degree any solution can have. The unit
+  group $\mathcal{O}_{K}^{\times} = \{\pm 1, \pm i\}$
   has rank $0$, and it is $\Z[i/2] = \Z[i][1/2]$ that supplies the needed unit
   $1+i$.
 \end{example}
