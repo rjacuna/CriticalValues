@@ -181,7 +181,7 @@ The corollary is the statement in the title.
 
 \section{The construction}\label{Scons}
 
-Let $f$ be irreducible of degree $n \geq 1$, with root $\theta$; write
+Let $f$ be irreducible of degree $n \geq 1$, with root $\alpha$; write
 $f(x) = \sum_{k=0}^{n} a_{k}x^{n-k}$, so that $a_{n} = f(0)$. If $f = x$, then
 $g = x^{2}$ and $F = x$ work. Otherwise $f(0) \neq 0$, and since
 $\gcd(f,f') = 1$ in $\Q[x]$, the elimination ideal $(f,f') \cap \Z$ is nonzero;
@@ -212,19 +212,19 @@ together with this $F$.
   with $k < n$, so it divides $v(0)F(x) - v(Mx)$ and $W \in \Z[x]$. Therefore
   $g$ is an integral polynomial.
 
-  Let $\beta = \theta/M$, a root of $F$. Then
-  $W(\beta) = -v(\theta)/\rho = -1/f'(\theta)$, so
+  Let $\beta = \alpha/M$, a root of $F$. Then
+  $W(\beta) = -v(\alpha)/\rho = -1/f'(\alpha)$, so
   \[
-    g(\beta) = \theta, \qquad
-    g'(\beta) = M\bigl(1 + f'(\theta)W(\beta)\bigr) = 0 .
+    g(\beta) = \alpha, \qquad
+    g'(\beta) = M\bigl(1 + f'(\alpha)W(\beta)\bigr) = 0 .
   \]
   Hence $\beta$ is a double root of $f \circ g$, and $F$ is primitive
   irreducible, so $F \mid g'$ and $F^{2} \mid f \circ g$ by Gauss.
 \end{pf}
 
-The computation uses $f(\theta) = 0$ and nothing else about $\theta$, so it runs
+The computation uses $f(\alpha) = 0$ and nothing else about $\alpha$, so it runs
 at every root of $f$ at once: all $n$ conjugates are critical values of the same
-$g$, at the $n$ points $\theta_{i}/M$. That is what makes $F^{2}$, and not
+$g$, at the $n$ points $\alpha_{i}/M$. That is what makes $F^{2}$, and not
 merely $(x - \beta)^{2}$, divide $f \circ g$.
 
 Any $\rho$ will do, but $M = \rho\,a_{n}$ multiplies into every coefficient of
