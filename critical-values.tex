@@ -181,16 +181,12 @@ The corollary is the statement in the title.
 \end{cor}
 
 \begin{pf}
-  Let $\alpha$ be a critical value, so that $g(\beta) = \alpha$ and
-  $g'(\beta) = 0$ for some $g$ and $\beta$, and let $f = m_{\alpha}$ be the
-  minimal polynomial of $\alpha$. Then $(f \circ g)(\beta) = 0$ and
-  $(f \circ g)'(x) = f'(g(x))\,g'(x)$, so $\beta$ is a double root of
-  $f \circ g \in \Z[x]$; hence $m_{\beta} \mid g'$ and
-  $m_{\beta}^{2} \mid f \circ g$. Conversely, take $F$ and $g$ as in
-  Theorem \ref{T1} for $f = m_{\alpha}$. A root $\beta$ of $F$ has
-  $g'(\beta) = 0$ and $f(g(\beta)) = 0$, so $g(\beta)$ is a conjugate of
-  $\alpha$; as $g$ has integer coefficients, conjugating makes $\alpha$ itself a
-  critical value.
+  Write $f = m_{\alpha}$. If $g(\beta) = \alpha$ and $g'(\beta) = 0$ then
+  $\beta$ is a double root of $f \circ g$, since $(f \circ g)' = f'(g)\,g'$; so
+  $m_{\beta} \mid g'$ and $m_{\beta}^{2} \mid f \circ g$. Conversely take $F$
+  and $g$ from Theorem \ref{T1}: a root $\beta$ of $F$ has $g'(\beta) = 0$ and
+  $f(g(\beta)) = 0$, so $g(\beta)$ is a conjugate of $\alpha$, and conjugating
+  --- $g$ is integral --- gives $\alpha$ itself.
 \end{pf}
 
 \section{The construction}\label{Scons}
