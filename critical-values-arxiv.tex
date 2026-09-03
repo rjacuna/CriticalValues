@@ -52,6 +52,7 @@
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem*{theorem*}{Theorem}
+\newtheorem*{ptheorem}{Petrov's Theorem}
 \newtheorem{cor}{Corollary}
 \theoremstyle{remark}
 \newtheorem{example}{Example}
@@ -81,9 +82,10 @@
     \begin{abstract}
       \noindent
       \justifying
-      For every irreducible $f \in \Z[x]$ of positive degree we construct
-      $g \in \Z[x]$ and an irreducible $F \in \Z[x]$ with $F \mid g'$ and
-      $F^{2} \mid f \circ g$.
+      We arrived at an independent proof of Petrov's theorem. For every
+      irreducible $f \in \Z[x]$ of positive degree there are $g \in \Z[x]$
+      and an irreducible $F \in \Z[x]$ of positive degree with
+      $F \mid g'$ and $F^{2} \mid f \circ g$.
       Equivalently, every algebraic number is a critical value of an integer
       polynomial, so the set of critical values of $\Z[x]$ is exactly
       $\overline{\Q}$. The construction is explicit. The proof was
@@ -97,18 +99,21 @@
 A critical value of a nonconstant $g \in \Z[x]$ is a number $\alpha$ with
 $g(\beta) = \alpha$ and $g'(\beta) = 0$ for some $\beta$. Since $\overline{\Q}$ is
 closed under polynomial evaluation, every critical value is algebraic.
-Johannes Walcher posed the problem of establishing the reverse implication.
-This note solves Walcher's problem with an explicit construction.
+Schwarz, Vologodsky and Walcher posed the problem of establishing the
+reverse implication \cite{svw2017}.
+This note solves the problem with an explicit construction.
 
-\begin{theorem}\label{T1}
+\begin{ptheorem}
   Let $f$ be an irreducible integral polynomial of positive degree. Then there
   exist $F$ and $g$ in $\Z[x]$, with $F$ irreducible and of positive degree,
   such that
   \[
     F \mid g' \quad\text{and}\quad F^{2} \mid f \circ g .
   \]
-\end{theorem}
+\end{ptheorem}
 
+The construction in \S\ref{Scons} was derived independently. Petrov's theorem
+\cite{petrov2021} was found later.
 The corollary is the statement in the title.
 
 \begin{cor}\label{C3}
@@ -117,9 +122,9 @@ The corollary is the statement in the title.
 
 \begin{pf}
   Write $f = m_{\alpha}$. If $g(\beta) = \alpha$ and $g'(\beta) = 0$ then
-  $\beta$ is a double root of $f \circ g$, since $(f \circ g)' = (f' \circ g)\,g'$;
+  $\beta$ is a double root of $f \circ g$, since $(f \circ g)' = (f' \circ g)\,g'$,
   so $m_{\beta} \mid g'$ and $m_{\beta}^{2} \mid f \circ g$. Conversely take $F$
-  and $g$ from Theorem \ref{T1}: a root $\beta$ of $F$ has $g'(\beta) = 0$ and
+  and $g$ from Petrov's theorem. A root $\beta$ of $F$ has $g'(\beta) = 0$ and
   $f(g(\beta)) = 0$, so $g(\beta)$ is a conjugate of $\alpha$, and conjugation
   gives $\alpha$ itself.
 \end{pf}
@@ -129,18 +134,14 @@ The corollary is the statement in the title.
 Let $f$ be irreducible of degree $n \geq 1$ and $\alpha$ a root. Write
 $f(x) = \sum_{k=0}^{n} a_{k}x^{n-k}$, so that $a_{n} = f(0)$. If $f = x$, then
 $g = x^{2}$ and $F = x$ work. Otherwise $f(0) \neq 0$, and since
-$\gcd(f,f') = 1$ in $\Q[x]$, the elimination ideal $(f,f') \cap \Z$ is nonzero;
-let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$, be such that
+$\gcd(f,f') = 1$ in $\Q[x]$, the elimination ideal $(f,f') \cap \Z$ is nonzero.
+Let $u, v \in \Z[x]$ and $\rho \in \Z$, $\rho \neq 0$, be such that
 $u\,f + v\,f' = \rho$, and set $M := \rho\,a_{n}$, $F(x) := f(Mx)/a_{n}$ and
 $W(x) := \bigl(v(0)F(x) - v(Mx)\bigr)/\rho$. The polynomial claimed by
-Theorem \ref{T1} is
+Petrov's theorem is
 \begin{equation}\label{Eg}
   g(x) := Mx + f(Mx)\,W(x).
 \end{equation}
-
-\begin{theorem*}[restatement of Theorem \ref{T1}]
-  $F$ is irreducible, and $F \mid g'$ and $F^{2} \mid f \circ g$.
-\end{theorem*}
 
 \begin{pf}
   Write $F(x) = \sum_{k=0}^{n} A_{k}x^{n-k}$. From $A_{k} = a_{k}M^{n-k}/a_{n}$
@@ -150,7 +151,7 @@ Theorem \ref{T1} is
   with $k < n$, so it divides $v(0)F(x) - v(Mx)$ and $W \in \Z[x]$. Therefore
   $g$ is an integral polynomial.
 
-  Let $\beta = \alpha/M$, a root of $F$; therefore $g(\beta) = \alpha$, and
+  Let $\beta = \alpha/M$, a root of $F$. Therefore $g(\beta) = \alpha$, and
   $\rho W(\beta) = -v(\alpha)$. Then
   \begin{align*}
     g'(\alpha/M)
@@ -173,7 +174,7 @@ Each line below is a closed identity, checkable by expansion.
 
 \begin{example}[$f = qx - p$, $p \neq 0$, $\gcd(p,q) = 1$]
   Here $f' = q$ and $p = qx - f$, so $(f,f') \cap \Z = \Z$ and $\rho = 1$.
-  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = ax + b$; then
+  Choose $a, b \in \Z$ with $ap + bq = 1$ and take $u = -a$, $v = ax + b$. Then
   $f(0) = -p$, $M = -p$, $F = qx + 1$, $W = x$, and
   \[
     g = -pqx^{2} - 2px, \qquad
@@ -203,7 +204,7 @@ Each line below is a closed identity, checkable by expansion.
 \end{example}
 
 \begin{example}[$f = x^{3}-x-1$]
-  The construction gives $M = 23$ and a sextic. But it is not unique: any choice
+  The construction gives $M = 23$ and a sextic. But it is not unique. Any choice
   of $\rho$ will do, and moreover, for $\alpha$ to be a critical value, the
   critical point need not be $\alpha/k$ for any $k \in \Z$. Take for example
   \[
@@ -217,7 +218,7 @@ Each line below is a closed identity, checkable by expansion.
 
 \begin{example}[Dedekind's cubic]\label{Ex85}
   $f = x^{3} - x^{2} - 2x - 8$, the standard example of a field whose ring of
-  integers is not monogenic: $2$ is a common index divisor
+  integers is not monogenic. Here $2$ is a common index divisor
   \cite{dedekind1878}. With $u = 21x - 125$, $v = -7x^{2} + 44x - 3$,
   $\rho = 1006$, $f(0) = -8$, $M = -8048$,
   \[
@@ -238,16 +239,20 @@ Each line below is a closed identity, checkable by expansion.
 The construction of $g$ was provided by AI. However, the crucial step that
 allowed the agent to provide answers was my proof of Corollary \ref{C3}. Once I
 recast the problem as the search for an irreducible polynomial $F$ satisfying
-the hypotheses of Theorem \ref{T1}, the agent found $g$ for a general linear
+the hypotheses of Petrov's theorem, the agent found $g$ for a general linear
 polynomial (which one can do by hand), then for a general quadratic, then for a
 general cubic, and finally gave the formula for $g$ for arbitrary $f$.
 Previously, all agents I tried failed to construct $g$ for $x^{3}-x-1$.
+An agent later found Petrov's theorem on MathOverflow after I insisted it
+should do a deep literature search, including all the classical literature.
 The development above has been formalized in Lean~4 \cite{lean4} against
 Mathlib \cite{mathlib}, in about $1{,}200$ lines \cite{repo}. An online
 calculator is provided for the reader to verify the construction \cite{app}. It
 runs the construction in the browser and, if $\alpha$ is real, generates a
 Desmos plot that allows the reader to check visually that it is a critical
-value.
+value. The implemented program does have a virtue that Petrov's construction
+doesn't have. Because it uses the reduced resultant, the coefficients come out
+as small as possible.
 
 \begin{thebibliography}{Acu26b}
 
@@ -257,6 +262,11 @@ Richard Dedekind.
   Theorie der h\"{o}heren Kongruenzen.
 \newblock \emph{Abhandlungen der K\"{o}niglichen Gesellschaft der
   Wissenschaften zu G\"{o}ttingen}, 1878.
+
+\bibitem[SVW17]{svw2017}
+Albert Schwarz, Vadim Vologodsky, and Johannes Walcher.
+\newblock \emph{Integrality of Framing and Geometric Origin of 2-functions}.
+\newblock \url{https://arxiv.org/abs/1702.07135}, 2017.
 
 \bibitem[The20]{mathlib}
 The mathlib Community.
@@ -268,6 +278,11 @@ Leonardo de Moura and Sebastian Ullrich.
 \newblock The {L}ean 4 Theorem Prover and Programming Language.
 \newblock In \emph{Automated Deduction -- CADE 28}, Lecture Notes in Computer
   Science. Springer, 2021.
+
+\bibitem[Pet21]{petrov2021}
+Fedor Petrov.
+\newblock Answer to ``When $p(x)^{2} \mid f(g(x))$?''.
+\newblock \url{https://mathoverflow.net/q/397800}, 2021.
 
 \bibitem[Acu26a]{app}
 RJ Acu\~{n}a.
