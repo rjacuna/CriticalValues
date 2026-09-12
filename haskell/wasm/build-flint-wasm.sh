@@ -17,10 +17,9 @@ FLINT_VERSION=3.4.0
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-# Build outside the repo. GMP's configure refuses to run under a path
+# Build outside the repo: GMP's configure refuses to run under a path
 # containing an apostrophe or a space ("unsafe absolute working directory
-# name"), and this checkout lives under "Tomorrow's Talk". Override with
-# CRIT_WASM_BUILD if you want it elsewhere.
+# name"). Override with CRIT_WASM_BUILD if you want it elsewhere.
 BUILD="${CRIT_WASM_BUILD:-$HOME/.cache/crit-wasm}"
 PREFIX="$BUILD/local"
 mkdir -p "$BUILD" "$PREFIX"
