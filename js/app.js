@@ -213,20 +213,6 @@ function renderSetup(d, s) {
     src.textContent = "H irreducible only if f is — no factoriser";
   }
 
-  const ck = $("#checks");
-  ck.innerHTML = "";
-  const rows = [...s.checks];
-  if (s.HIrred !== undefined && s.HIrred !== null)
-    rows.push({ name: "Lemma D : H is irreducible   (FLINT)", ok: s.HIrred });
-  for (const c of rows) {
-    const row = document.createElement("div");
-    row.className = "chk " + (c.ok ? "text-success" : "text-danger fw-bold");
-    row.textContent = (c.ok ? "ok   " : "FAIL ") + c.name;
-    ck.append(row);
-  }
-  $("#gmeta").textContent =
-    `degree ${s.degG}, ${s.digitsG}-digit coefficients` +
-    (s.HIrred === undefined ? "" : `  ·  ${rows.length} checks`);
 }
 
 // ---------------------------------------------------------------- run

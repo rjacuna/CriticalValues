@@ -65,18 +65,8 @@
   #stickysel { position: sticky; top: 0; z-index: 5; display: none; }
   @media (max-width: 991.98px) { #stickysel.on { display: block; } }
 
-  .chk { font-size: .78rem; font-family: var(--bs-font-monospace); }
-
-  /* The default disclosure marker is a right-pointing triangle, which is what
-     a wrapped coefficient uses to say "continues" -- one glyph cannot mean
-     both. A plus/minus cannot be confused with a continuation. */
-  details > summary { list-style: none; }
-  details > summary::-webkit-details-marker { display: none; }
-  details > summary::before {
-    content: "+"; display: inline-block; width: 1em;
-    font-family: var(--bs-font-monospace); font-weight: 700;
-  }
-  details[open] > summary::before { content: "\2212"; }
+  /* The title is a link to the paper: underlined, in the text colour. */
+  .title-link, .title-link:hover, .title-link:focus { color: inherit; text-decoration: underline; text-underline-offset: .15em; }
   .card { border-radius: .75rem; }
 </style>
 </head>
@@ -85,7 +75,7 @@
 <div class="container-xxl py-3 py-lg-4">
 
   <header class="mb-3">
-    <h1 class="h4 mb-1">Every algebraic number is a critical value of an integer polynomial</h1>
+    <h1 class="h4 mb-1"><a class="title-link" href="https://raw.githubusercontent.com/rjacuna/CriticalValues/master/critical-values.pdf" title="the paper (PDF)">Every algebraic number is a critical value of an integer polynomial</a></h1>
     <!-- data-tex spans are typeset by KaTeX at load; prose stays prose -->
     <p class="text-body-secondary small mb-0">
       For <span data-tex="f \in \mathbb{Z}[x]"></span> and for each irreducible factor
@@ -185,10 +175,6 @@
           </div>
           <hr class="my-2">
           <div class="small text-body-secondary" id="setupmeta"></div>
-          <details class="mt-2">
-            <summary class="small tap">verification</summary>
-            <div id="checks" class="mt-2"></div>
-          </details>
         </div>
       </div>
     </div>
@@ -234,11 +220,6 @@
 
   </div>
 
-  <footer class="text-body-secondary small mt-4">
-    The construction and all 22 checks are Haskell, compiled — never reimplemented
-    in JavaScript. Coefficients cross every boundary as decimal strings, never as
-    JavaScript numbers: <em>g</em> routinely exceeds 2<sup>53</sup>.
-  </footer>
 </div>
 
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
