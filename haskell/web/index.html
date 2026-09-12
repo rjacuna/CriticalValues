@@ -20,6 +20,8 @@
   html { -webkit-text-size-adjust: 100%; }
   body { touch-action: manipulation; padding-bottom: env(safe-area-inset-bottom); }
   .tap { min-height: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  /* a link styled as a button: a <button> centres its label in the 44px, an <a> does not */
+  a.btn.tap { display: inline-flex; align-items: center; justify-content: center; }
 
   .root-item { cursor: pointer; user-select: none; transition: background-color .12s; }
   .root-item.pressed { background-color: var(--bs-secondary-bg); }   /* pointerdown, not hover */
