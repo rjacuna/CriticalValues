@@ -45,6 +45,9 @@ Build with `lake exe cache get && lake build` (Lean 4.32.2).
 | paper §3 | a solution satisfies `F ∣ g'` and `F² ∣ f ∘ g` | `sq_dvd_comp_of_isSolution` | proved |
 | paper §3 | Gauss: `F ∣ p ↔ p(β) = 0` for `F` irreducible primitive with `F(β) = 0` | `dvd_iff_aeval_eq_zero` | proved |
 | paper §3 | **Proposition 1**, `deg g > deg α` for a nonconstant solution | `natDegree_minpoly_lt` | proved |
+| paper Ex. 3 | `x³ - x - 1` is irreducible over `ℚ`; `deg θ = 3` | `irreducible_cubic`, `natDegree_minpoly_cubic` | proved |
+| paper Ex. 3 | no `g ∈ ℚ[X]` of degree `4` has a root of `x³ - x - 1` as a critical value | `no_quartic`, `no_quartic_int` | proved |
+| paper Ex. 3 | every nonconstant solution for `x³ - x - 1` has degree `≥ 5` | `five_le_natDegree` | proved |
 
 **The spec is formalized in full: no `sorry`**, and `#print axioms` on every
 theorem gives only `propext, Classical.choice, Quot.sound`.
@@ -192,9 +195,27 @@ Proposition 1 is about `deg α`, so it is stated in a field containing `ℚ`, wi
 so `deg α ≤ deg β` by `minpoly.natDegree_le` in the finite-dimensional
 `ℚ⟮β⟯`.
 
-The quintic of the paper's Example 3 is test vector 8.4 below; the proof there
-that no rational quartic has a root of `x³ - x - 1` as a critical value is not
-formalized.
+The quintic of the paper's Example 3 is test vector 8.4 below.
+
+### `CriticalValues/Quartic.lean`
+
+The rest of Example 3: no rational quartic has a root `θ` of `x³ - x - 1` as a
+critical value, so with Proposition 1 and test vector 8.4 the least degree of a
+solution for `x³ - x - 1` is `5` (`five_le_natDegree`).
+
+The proof follows the paper, with one substitution. The paper reads the cubic
+`s(z) = z³ + 2u²z² + (u⁴ + 18uw²)z + 2u³w² + 27w⁴` off as the characteristic
+polynomial of `uβ₁² + 3wβ₁` in `ℚ[β₁]/(β₁³ + uβ₁ + w)`; here it is the explicit
+identity `s(uX² + 3wX) = (X³ + uX + w)·R(X)`, with
+`R = u³X³ + 9u²wX² + (u⁴ + 27uw²)X + 2u³w + 27w³`, checked by
+`linear_combination`, so no linear algebra over a quotient ring appears. The
+depression `x ↦ x + b/(4a)` is done on the scalars `g(β) = θ`, `g'(β) = 0`
+with `field_simp`, and the matching `s(z) = a⁻³ f(az + r)` is replaced by
+reducing `θ³ = θ + 1` and using that `1, θ, θ²` are linearly independent over
+`ℚ` (`coeffs_eq_zero`), which is where the irreducibility of `x³ - x - 1` is
+used. The two "no rational root" facts, for `x³ - x - 1` and for the quartic
+`σ⁴ + 196σ³ - 228σ² + 202σ - 23`, are `isInteger_of_is_root_of_monic` followed
+by a finite check on the divisors of the constant term.
 
 ### `CriticalValues/Ledger.lean`
 

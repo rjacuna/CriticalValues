@@ -7,4 +7,5 @@ import CriticalValues.Nondeg
 import CriticalValues.Critical
 import CriticalValues.Main
 import CriticalValues.Classify
+import CriticalValues.Quartic
 import CriticalValues.Ledger
