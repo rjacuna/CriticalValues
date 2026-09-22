@@ -6,4 +6,5 @@ import CriticalValues.Exists
 import CriticalValues.Nondeg
 import CriticalValues.Critical
 import CriticalValues.Main
+import CriticalValues.Classify
 import CriticalValues.Ledger

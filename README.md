@@ -40,6 +40,11 @@ Build with `lake exe cache get && lake build` (Lean 4.32.2).
 | §1.3 | Corollary 3, converse | `isAlgebraic_critical_value` | proved |
 | §8 | test vectors 8.1–8.4 | `test81_*` … `test84_*` | proved |
 | §8 | non-vacuity of `Setup` | `nonempty_Setup_X_sq_add_one` | proved |
+| paper §3 | **Theorem 1**, the criterion: a solution for `β` exists iff `F ∣ h + f'(P)·Q` | `isSolution_iff`, `critical_value_iff` | proved |
+| paper §3 | **Theorem 1**, the coset: the solutions are `P + F·Q + F²·ℤ[X]` | `isSolution_iff_coset`, `classification` | proved |
+| paper §3 | a solution satisfies `F ∣ g'` and `F² ∣ f ∘ g` | `sq_dvd_comp_of_isSolution` | proved |
+| paper §3 | Gauss: `F ∣ p ↔ p(β) = 0` for `F` irreducible primitive with `F(β) = 0` | `dvd_iff_aeval_eq_zero` | proved |
+| paper §3 | **Proposition 1**, `deg g > deg α` for a nonconstant solution | `natDegree_minpoly_lt` | proved |
 
 **The spec is formalized in full: no `sorry`**, and `#print axioms` on every
 theorem gives only `propext, Classical.choice, Quot.sound`.
@@ -159,6 +164,37 @@ wanted: take `h` to be the primitive squarefree part of `f`, which the Haskell
 Corollary 3 is packaged without `minpoly`: an algebraic `α` is a root of some
 `p ∈ ℤ[X]`, and factoring `p.primPart` in the UFD `ℤ[X]` gives an irreducible
 primitive factor that already kills `α`, since `K` is a domain.
+
+### `CriticalValues/Classify.lean`
+
+§3 of the paper: the classification at a fixed critical point, and the degree
+bound. This is not in the spec; it was added with the paper's Section 3.
+
+Theorem 1 is stated root-free, in the style of §3 of the spec. The paper fixes
+a nonconstant `P`, a root `β` of `P - α`, and writes `m_α ∘ P = m_β · h`; here
+`f = m_α`, `F` is any nonconstant irreducible factor of `f ∘ P` with cofactor
+`h`, "`g(β) = α` and `g'(β) = 0`" is `IsSolution F P g := F ∣ g - P ∧ F ∣ g'`,
+and "`m_α'(α) ∣ h(β)` in `ℤ[β]`" is `∃ Q, F ∣ h + f'(P)·Q`. The whole proof is
+the identity `f'(P) g' = F'(h + f'(P) q) + F(h' + f'(P) q')` for `g = P + F q`,
+obtained by differentiating `f ∘ P = F h`, together with two non-divisibilities
+that are degree arguments: `F ∤ f'(P)`, through the Bézout relation, and
+`F ∤ F'`. `Irreducible F` enters only through `Irreducible.prime`.
+
+`dvd_iff_aeval_eq_zero` is the bridge to roots: an irreducible primitive `F`
+with `F(β) = 0` divides exactly the integer polynomials vanishing at `β`, by
+`minpoly.eq_of_irreducible` over `ℚ` and Gauss's lemma back to `ℤ[X]`. With it,
+`critical_value_iff` is Theorem 1 exactly as the paper states it, with
+`aeval β` throughout.
+
+Proposition 1 is about `deg α`, so it is stated in a field containing `ℚ`, with
+`deg α` the degree of `minpoly ℚ α`. `β` is a root of `g' ≠ 0`, so
+`minpoly ℚ β ∣ g'` bounds `deg β ≤ deg g - 1`; and `α = g(β)` lies in `ℚ(β)`,
+so `deg α ≤ deg β` by `minpoly.natDegree_le` in the finite-dimensional
+`ℚ⟮β⟯`.
+
+The quintic of the paper's Example 3 is test vector 8.4 below; the proof there
+that no rational quartic has a root of `x³ - x - 1` as a critical value is not
+formalized.
 
 ### `CriticalValues/Ledger.lean`
 
