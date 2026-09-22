@@ -154,7 +154,9 @@ sorting=ynt
       $F \mid g'$ and $F^{2} \mid f \circ g$.
       Equivalently, every algebraic number is a critical value of an integer
       polynomial, so the set of critical values of $\Z[x]$ is exactly
-      $\overline{\Q}$. The construction is explicit. The proof was
+      $\overline{\Q}$. The construction is explicit. We classify
+      $g \in \Z[x]$ with critical value $\alpha$, and find a lower bound for
+      $\deg g$. The proof was
       assisted by AI, and has been formalized in Lean.
     \end{abstract}
   \end{minipage}
@@ -167,7 +169,7 @@ $g(\beta) = \alpha$ and $g'(\beta) = 0$ for some $\beta$. Since $\overline{\Q}$ 
 closed under polynomial evaluation, every critical value is algebraic.
 Schwarz, Vologodsky and Walcher posed the problem of establishing the
 reverse implication \cite{svw2017}.
-This note solves the problem with an explicit construction.
+This note solves the problem.
 
 \begin{ptheorem}
   Let $f$ be an irreducible integral polynomial of positive degree. Then there
@@ -226,15 +228,72 @@ Petrov's theorem is
       &= M - a_{n}f'(\alpha)v(\alpha) = 0 ,
   \end{align*}
   because $u(\alpha)\cancel{f(\alpha)} + v(\alpha)f'(\alpha) = \rho$.
-  Hence $\beta$ is a double root of $f \circ g$, and $F$ is primitive
-  irreducible, so $F \mid g'$ and $F^{2} \mid f \circ g$ by Gauss.
+  Hence $\beta$ is a double root of $f \circ g$, and $F$ is irreducible, so
+  $F \mid g'$ and $F^{2} \mid f \circ g$ by Gauss.
 \end{pf}
 
 Any $\rho$ will do, but $M = \rho\,a_{n}$ multiplies into every coefficient of
 $F$, $W$ and $g$, so the reduced resultant gives the answer with the smallest
 coefficients.
 
-\section{Examples}\label{Sex}
+\section{Classification}\label{Sclass}
+
+We say a polynomial $p$ is reducible if it is not primitive, or $p = fg$
+with $\deg f, \deg g < \deg p$, and irreducible otherwise. For
+$\alpha \in \overline{\Q}$ we normalize the minimal polynomial $m_{\alpha}$
+with positive leading coefficient for uniqueness.
+Say that $\alpha$ is a critical value for $\beta \in \overline{\Q}$ if some
+$g \in \Z[x]$ has $g(\beta) = \alpha$ and $g'(\beta) = 0$, and call such a $g$
+a solution for $\beta$. Here we classify which $g$ can appear for a given
+$\alpha$. Let $P \in \Z[x]$ with $\deg P > 0$. By the fundamental theorem
+of algebra, $P(x) - \alpha$ has a root $\beta$. Moreover this root is
+algebraic because it is a root of $m_{\alpha} \circ P \in \Z[x]$.
+
+\begin{theorem}\label{Tcoset}
+  Let $P \in \Z[x]$ be nonconstant, let $\beta$ be a root of $P - \alpha$,
+  and write $m_{\alpha} \circ P = m_{\beta}\,h$ with $h \in \Z[x]$. Then
+  $\alpha$ is a critical value for $\beta$ if and only if
+  \[
+    m_{\alpha}'(\alpha) \mid h(\beta) \ \text{ in } \Z[\beta] .
+  \]
+  In that case,
+  for $Q \in \Z[x]$ with $Q(\beta) = -h(\beta)/m_{\alpha}'(\alpha)$,
+  $g_{0} = P + m_{\beta}Q$ is a solution for $\beta$, and the solutions $g$
+  for $\beta$ are exactly $g \in g_{0} + m_{\beta}^{2}\,\Z[x]$.
+\end{theorem}
+
+\begin{pf}
+  By Gauss's lemma $m_{\beta}$ divides $m_{\alpha} \circ P$ in $\Z[x]$, since
+  $m_{\beta}$ is irreducible. Differentiating $m_{\alpha} \circ P = m_{\beta}h$
+  at $\beta$ gives $m_{\alpha}'(\alpha)P'(\beta) = m_{\beta}'(\beta)h(\beta)$
+  with $m_{\alpha}'(\alpha), m_{\beta}'(\beta) \neq 0$, so the two
+  divisibilities are equivalent and
+  $-h(\beta)/m_{\alpha}'(\alpha) = -P'(\beta)/m_{\beta}'(\beta)$. Now
+  $g_{0}(\beta) = P(\beta) = \alpha$ and
+  $g_{0}'(\beta) = P'(\beta) + m_{\beta}'(\beta)Q(\beta) = 0$. If $g$ is a
+  solution for $\beta$ then $g - P$ vanishes at $\beta$, so
+  $g = P + m_{\beta}q$ with $q \in \Z[x]$, and
+  $0 = g'(\beta) = P'(\beta) + m_{\beta}'(\beta)q(\beta)$ gives the
+  divisibility and $q(\beta) = Q(\beta)$, so $m_{\beta} \mid q - Q$ and
+  $g \in g_{0} + m_{\beta}^{2}\Z[x]$; conversely every $g_{0} + m_{\beta}^{2}r$
+  has value $\alpha$ and derivative $0$ at $\beta$.
+\end{pf}
+
+
+Since the solutions for $\alpha$ are cosets $g \in g_{0} + m_{\beta}^{2}\,\Z[x]$,
+$\deg g$ is unbounded above. So the natural question is the smallest
+$\deg g$ for $\alpha$; we do not answer that question, but we provide the
+following lower bound.
+
+\begin{prop}\label{Pdeg}
+  If $g$ is a nonconstant solution for $\beta$, then $\deg g > \deg \alpha$.
+\end{prop}
+
+\begin{pf}
+  Since $\alpha = g(\beta)$, $\Q(\alpha) \subseteq \Q(\beta)$, so
+  $\deg \beta \geq \deg \alpha$. And $g' \neq 0$ vanishes at $\beta$, so
+  $m_{\beta} \mid g'$ and $\deg g - 1 \geq \deg \beta$.
+\end{pf}
 
 Each line below is a closed identity, checkable by expansion.
 
@@ -266,20 +325,52 @@ Each line below is a closed identity, checkable by expansion.
   \]
   with $g' = 2ac\bigl(2a^{2}bcD\,x - (b^{2}-3ac)\bigr)F$. For $b = 0$ the
   quartic term drops and $\deg g = 3 = n+1$, the least any solution can have.
+  On $f = x^{2} - d$ that cubic is $g(x) = -D_{3}(4d^{2}x, d)/(2d)$, a rescaling
+  of the Dickson polynomial $D_{3}(x,d) = x^{3} - 3dx$, whose pair of critical
+  values is classical.
 
 \end{example}
 
 \begin{example}[$f = x^{3}-x-1$]
-  The construction gives $M = 23$ and a sextic. But it is not unique. Any choice
-  of $\rho$ will do, and moreover, for $\alpha$ to be a critical value, the
-  critical point need not be $\alpha/k$ for any $k \in \Z$. Take for example
+  The construction gives $M = 23$ and a sextic. Then a search exhibits a
+  quintic. Let $\theta$ be a root of $f$. Then Theorem~\ref{Tcoset}
+  with $\beta = 1/(\theta^{2} - \theta + 2)$, so that
+  $m_{\beta} = 23x^{3} - 23x^{2} + 8x - 1$, $P = 46x^{2} - 23x + 3$, and
+  $Q = -1058x^{2} + 667x - 115$, gives the quintic
   \[
-    g = -24334x^{5} + 39675x^{4} - 26450x^{3} + 9085x^{2} - 1610x + 118,
-    \qquad F = 23x^{3} - 23x^{2} + 8x - 1,
+    g = -24334x^{5} + 39675x^{4} - 26450x^{3} + 9085x^{2} - 1610x + 118 .
   \]
-  with $g' = -230\,(23x-7)F$ and $F^{2} \mid f \circ g$, the cofactor having
-  degree $9$. Here $F$ has a nonzero $x^{2}$ coefficient, whereas $\alpha/k$ has
-  minimal polynomial $k^{3}x^{3} - kx - 1$.
+  This is the least possible degree. By Proposition~\ref{Pdeg} a solution
+  has degree at least $4$, and degree $4$ cannot happen. In fact no
+  $g \in \Q[x]$ of degree $4$ has $\theta$ as a critical value. Suppose
+  $g(\beta) = \theta$ and $g'(\beta) = 0$ with $\deg g = 4$. Up to a rational
+  translation of $x$, $g'$ is a multiple of a depressed cubic,
+  $g' = 4a\,(x^{3} + ux + w)$ with $a, u, w \in \Q$, $a \neq 0$, so
+  $g = a\,h + r$ with $h = x^{4} + 2ux^{2} + 4wx$ and $r \in \Q$, and the
+  critical values of $g$ are $a s_{i} + r$ with $s_{i} = h(\beta_{i})$, where
+  the $\beta_{i}$ are the roots of $x^{3} + ux + w$. Since
+  $\beta_{i}^{3} = -u\beta_{i} - w$, $s_{i} = u\beta_{i}^{2} + 3w\beta_{i}$,
+  and the characteristic polynomial of this element of
+  $\Q[\beta]/(\beta^{3} + u\beta + w)$ is
+  \[
+    s(z) = z^{3} + 2u^{2}z^{2} + (u^{4} + 18uw^{2})\,z + 2u^{3}w^{2} + 27w^{4} .
+  \]
+  Now $s(z)$ is a monic cubic over $\Q$ with root $(\theta - r)/a$, whose
+  minimal polynomial is $a^{-3}f(az + r)$, so $s(z) = a^{-3}f(az + r)$. The
+  $z^{2}$ coefficient gives $r = 2au^{2}/3$, and with it the $z$ and constant
+  coefficients become $-1/a^{2} = 18uw^{2} - u^{4}/3$ and
+  $-1/a^{3} = 27w^{4} - 10u^{3}w^{2} - 2u^{6}/27$. The first forces
+  $u \neq 0$, so $\sigma = 27w^{2}/u^{3} \in \Q$, and the two equations read
+  $-1/a^{2} = -u^{4}(1 - 2\sigma)/3$ and
+  $-1/a^{3} = u^{6}(\sigma^{2} - 10\sigma - 2)/27$. Cubing the first and
+  squaring the second gives $-1/a^{6}$ and $1/a^{6}$ on the left, so adding
+  them, $u$ and $a$ drop out:
+  $(\sigma^{2} - 10\sigma - 2)^{2} = 27(1 - 2\sigma)^{3}$, that is,
+  $\sigma^{4} + 196\sigma^{3} - 228\sigma^{2} + 202\sigma - 23 = 0$. This is
+  monic with integer coefficients, so a rational root is an integer dividing
+  $23$. But the polynomial takes the values $148$ and $-648$ at
+  $\sigma = \pm 1$ and is nonzero at $\pm 23$. So there is no rational
+  $\sigma$, a contradiction.
 \end{example}
 
 \begin{example}[Dedekind's cubic]\label{Ex85}
