@@ -15,3 +15,5 @@
 # built from paper/body.tex and paper/abstract.tex by the Makefile
 arxiv/
 AMM/
+# the submission portal's download folder
+Your submission ID is */
