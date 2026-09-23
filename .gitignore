@@ -12,8 +12,6 @@
 *.xdv
 *.tar.gz
 
-# generated copies of the shared sources (make arxiv, make amm)
-arxiv/body.tex
-arxiv/abstract.tex
-AMM/body.tex
-AMM/abstract.tex
+# built from paper/body.tex and paper/abstract.tex by the Makefile
+arxiv/
+AMM/
