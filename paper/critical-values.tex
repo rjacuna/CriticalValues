@@ -1,0 +1,179 @@
+\documentclass[10pt]{article}
+
+% XeLaTeX
+\usepackage{fontspec}
+% Body face is Miller Display. Small caps use Miller Display's own OpenType
+% smcp feature (there is no real "Miller Display SC" font). Bold is Harriet
+% Display where installed, otherwise Miller Display's own Bold.
+\IfFontExistsTF{Harriet Display-Bold}{%
+  \setmainfont[
+    BoldFont = {Harriet Display-Bold},
+    BoldItalicFont = {Harriet Display-Bold Italic},
+    SmallCapsFeatures = {Letters=SmallCaps}]{Miller Display}%
+}{%
+  \setmainfont[
+    BoldFont = {Miller Display Bold},
+    SmallCapsFeatures = {Letters=SmallCaps}]{Miller Display}%
+}
+
+% Math Environment
+\usepackage{amsmath}      % Math macros
+\usepackage{yhmath}       % really wide hat
+\usepackage{amssymb}      % Math symbols
+\usepackage{unicode-math} % Unicode support
+\usepackage{eulervm}
+
+% Geometry package to ensure 1-inch margins
+\usepackage{geometry}
+\geometry{letterpaper, margin=1in}
+
+% Set line spacing to ensure no more than six lines per inch
+\renewcommand{\baselinestretch}{1.2}
+
+% Section and subsection formatting
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\usepackage{hyperref}
+\hypersetup{
+  pdfauthor={RJ Acu\~na},
+  pdftitle={Every Algebraic Number is a Critical Value of an Integer Polynomial},
+  pdflang=en-US,
+  colorlinks=true,
+  urlcolor = blue,
+  linkcolor = blue,
+  citecolor = blue}
+
+% Macros
+\newcommand\N{\mathbb{N}}
+\newcommand\Z{\mathbb{Z}}
+\newcommand\F{\mathbb{F}}
+\newcommand\Q{\mathbb{Q}}
+\newcommand\R{\mathbb{R}}
+\newcommand\C{\mathbb{C}}
+\newcommand\1{\mathbb{1}}
+% The dilation p(Mx), used on every line of §3.
+\newcommand\dil[1]{\widetilde{#1}}
+% breakable underscore, so long Lean identifiers can wrap in a table cell
+\newcommand\us{\_\discretionary{}{}{}}
+\newcommand\dt{.\discretionary{}{}{}}
+\newcommand\id[1]{\texttt{#1}}
+
+% Color
+\usepackage[dvipsnames]{xcolor}
+
+% Miscellaneous
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{tikz-cd}
+\usepackage{enumitem}
+\usepackage{pdfpages}
+\usepackage{mathdots}
+%  Underlines, for the proof marker.  normalem: leave \emph as italics.
+\usepackage[normalem]{ulem}
+\usepackage{polynom}
+\usepackage[makeroom]{cancel}
+% Theorem environment
+\usepackage{amsthm}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem*{theorem*}{Theorem}
+\newtheorem*{ptheorem}{Petrov's Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{tth}{Target Theorem}
+\newtheorem*{kl*}{Key Lemma}
+\newtheorem*{cor*}{Corollary}
+\newtheorem{cor}{Corollary}
+\newtheorem{prop}{Proposition}
+\newtheorem*{conj*}{Conjecture}
+\theoremstyle{remark}
+\newtheorem{rem}{Remark}
+\newtheorem{example}{Example}
+\theoremstyle{plain}
+% Proofs open with an underlined marker and close with a black box.
+\newenvironment{pf}{%
+  \par\addvspace{\medskipamount}\noindent\uwave{pf.}\ \ignorespaces}{%
+  \unskip\nobreak\hfill$\blacksquare$\par\addvspace{\medskipamount}}
+
+% Bend symbol
+\usepackage{manfnt}
+
+\usepackage{microtype}
+\microtypesetup{protrusion=false}
+\usepackage[
+backend=biber,
+style=alphabetic,
+sorting=ynt
+]{biblatex}
+\addbibresource{refs.bib}
+
+% Remove page numbers
+\usepackage{nopageno}
+
+\usepackage{url}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+
+% to format pseudocode
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  language=Haskell,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray}\ttfamily,
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  captionpos=b
+}
+\usepackage{changepage}
+\usepackage{ragged2e}
+
+
+% Shared-body hooks (see body.tex).
+\newif\ifanonymous
+\anonymousfalse
+\newcommand\paperSection[1]{\section{#1}}
+\newcommand\secref[1]{\S\ref{#1}}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textsc Every Algebraic Number is a
+    Critical Value of an Integer Polynomial}
+
+  {by RJ Acu\~na}
+\end{center}
+
+\begin{center}
+  \begin{minipage}{0.85\textwidth}
+    \begin{abstract}
+      \noindent
+      \justifying
+      \input{abstract}
+    \end{abstract}
+  \end{minipage}
+\end{center}
+
+\input{body}
+
+\printbibliography
+
+\begin{center}
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \includegraphics[width=0.2\textwidth]{qr-repo.png} &
+    \includegraphics[width=0.2\textwidth]{qr-site.png} \\[4pt]
+    \small the repository & \small the calculator
+  \end{tabular}
+\end{center}
+
+\end{document}
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:

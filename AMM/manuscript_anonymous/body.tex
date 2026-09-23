@@ -1,103 +1,7 @@
-% arXiv version of critical-values.tex.
-%
-% arXiv processes submissions with LaTeX/pdfLaTeX and does not run XeTeX, so
-% this file replaces the fontspec/unicode-math setup of the original with a
-% pdfLaTeX one and carries no system fonts. Palatino text with Euler math keeps
-% the original's colour; the body below is otherwise identical.
-%
-% The bibliography is inlined as thebibliography rather than left to
-% biblatex+biber, so no .bbl has to be shipped or version-matched.
-%
-% Build: pdflatex critical-values-arxiv (twice, for the cross-references).
-\documentclass[10pt]{article}
-
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{newpxtext}    % Palatino-like text, in place of Miller Display
-\usepackage{amsmath}
-\usepackage{newpxmath}    % Palatino-matched italic math
-% Not eulervm: the original loads it but unicode-math overrides it, so the
-% XeLaTeX build actually sets math in Latin Modern Math -- italic letters.
-% Euler here would set them upright and look nothing like the original.
-
-\usepackage{geometry}
-\geometry{letterpaper, margin=1in}
-\renewcommand{\baselinestretch}{1.2}
-
-\usepackage{titlesec}
-\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
-
-\usepackage{url}
-\usepackage{hyperref}
-\hypersetup{
-  pdfauthor={RJ Acu\~na},
-  pdftitle={Every Algebraic Number is a Critical Value of an Integer Polynomial},
-  pdflang=en-US,
-  colorlinks=true,
-  urlcolor = blue,
-  linkcolor = blue,
-  citecolor = blue}
-
-\newcommand\Z{\mathbb{Z}}
-\newcommand\Q{\mathbb{Q}}
-
-\usepackage{graphicx}
-\usepackage[normalem]{ulem}
-\usepackage[makeroom]{cancel}
-
-% newpxmath defines \openbox and so does amsthm; let the latter win.
-\let\openbox\relax
-\usepackage{amsthm}
-\theoremstyle{plain}
-\newtheorem{theorem}{Theorem}
-\newtheorem*{theorem*}{Theorem}
-\newtheorem*{ptheorem}{Petrov's Theorem}
-\newtheorem{cor}{Corollary}
-\newtheorem{prop}{Proposition}
-\theoremstyle{remark}
-\newtheorem{example}{Example}
-\theoremstyle{plain}
-
-% Proofs open with a wavy-underlined marker and close with a black box.
-\newenvironment{pf}{%
-  \par\addvspace{\medskipamount}\noindent\uwave{pf.}\ \ignorespaces}{%
-  \unskip\nobreak\hfill$\blacksquare$\par\addvspace{\medskipamount}}
-
-\usepackage{microtype}
-\microtypesetup{protrusion=false}
-\usepackage{nopageno}
-\usepackage{ragged2e}
-
-\begin{document}
-
-\begin{center}
-  {\Large \textsc Every Algebraic Number is a
-    Critical Value of an Integer Polynomial}
-
-  {by RJ Acu\~na}
-\end{center}
-
-\begin{center}
-  \begin{minipage}{0.85\textwidth}
-    \begin{abstract}
-      \noindent
-      \justifying
-      We arrived at an independent proof of Petrov's theorem. For every
-      irreducible $f \in \Z[x]$ of positive degree there are $g \in \Z[x]$
-      and an irreducible $F \in \Z[x]$ of positive degree with
-      $F \mid g'$ and $F^{2} \mid f \circ g$.
-      Equivalently, every algebraic number is a critical value of an integer
-      polynomial, so the set of critical values of $\Z[x]$ is exactly
-      $\overline{\Q}$. The construction is explicit. We classify
-      $g \in \Z[x]$ with critical value $\alpha$, and find a lower bound for
-      $\deg g$. The proof was
-      assisted by AI, and has been formalized in Lean.
-    \end{abstract}
-  \end{minipage}
-\end{center}
-
-\section{Introduction}
+% The body of the paper, shared by paper/, arxiv/ and AMM/.  Each wrapper
+% defines \paperSection, \secref, the environments pf, ptheorem, theorem,
+% cor, prop, example, and the switch \ifanonymous, in its own style.
+\paperSection{Introduction}
 
 A critical value of a nonconstant $g \in \Z[x]$ is a number $\alpha$ with
 $g(\beta) = \alpha$ and $g'(\beta) = 0$ for some $\beta$. Since $\overline{\Q}$ is
@@ -115,7 +19,7 @@ This note solves the problem.
   \]
 \end{ptheorem}
 
-The construction in \S\ref{Scons} was derived independently. Petrov's theorem
+The construction in \secref{Scons} was derived independently. Petrov's theorem
 \cite{petrov2021} was found later.
 The corollary is the statement in the title.
 
@@ -132,7 +36,7 @@ The corollary is the statement in the title.
   gives $\alpha$ itself.
 \end{pf}
 
-\section{The construction}\label{Scons}
+\paperSection{The construction}\label{Scons}
 
 Let $f$ be irreducible of degree $n \geq 1$ and $\alpha$ a root. Write
 $f(x) = \sum_{k=0}^{n} a_{k}x^{n-k}$, so that $a_{n} = f(0)$. If $f = x$, then
@@ -171,7 +75,7 @@ Any $\rho$ will do, but $M = \rho\,a_{n}$ multiplies into every coefficient of
 $F$, $W$ and $g$, so the reduced resultant gives the answer with the smallest
 coefficients.
 
-\section{Classification}\label{Sclass}
+\paperSection{Classification}\label{Sclass}
 
 We say a polynomial $p$ is reducible if it is not primitive, or $p = fg$
 with $\deg f, \deg g < \deg p$, and irreducible otherwise. For
@@ -200,13 +104,15 @@ algebraic because it is a root of $m_{\alpha} \circ P \in \Z[x]$.
 \begin{pf}
   By Gauss's lemma $m_{\beta}$ divides $m_{\alpha} \circ P$ in $\Z[x]$, since
   $m_{\beta}$ is irreducible. Differentiating $m_{\alpha} \circ P = m_{\beta}h$
-  at $\beta$ gives $m_{\alpha}'(\alpha)P'(\beta) = m_{\beta}'(\beta)h(\beta)$
-  with $m_{\alpha}'(\alpha), m_{\beta}'(\beta) \neq 0$, so the two
-  divisibilities are equivalent and
-  $-h(\beta)/m_{\alpha}'(\alpha) = -P'(\beta)/m_{\beta}'(\beta)$. Now
-  $g_{0}(\beta) = P(\beta) = \alpha$ and
-  $g_{0}'(\beta) = P'(\beta) + m_{\beta}'(\beta)Q(\beta) = 0$. If $g$ is a
-  solution for $\beta$ then $g - P$ vanishes at $\beta$, so
+  and evaluating at $\beta$ gives
+  $m_{\alpha}'(\alpha)P'(\beta) = m_{\beta}'(\beta)h(\beta)$, where
+  $m_{\alpha}'(\alpha), m_{\beta}'(\beta) \neq 0$, so the two
+  divisibilities are equivalent and $-h(\beta)/m_{\alpha}'(\alpha)$ equals
+  $-P'(\beta)/m_{\beta}'(\beta)$. Now $g_{0}(\beta) = P(\beta) = \alpha$ and
+  \[
+    g_{0}'(\beta) = P'(\beta) + m_{\beta}'(\beta)Q(\beta) = 0 .
+  \]
+  If $g$ is a solution for $\beta$ then $g - P$ vanishes at $\beta$, so
   $g = P + m_{\beta}q$ with $q \in \Z[x]$, and
   $0 = g'(\beta) = P'(\beta) + m_{\beta}'(\beta)q(\beta)$ gives the
   divisibility and $q(\beta) = Q(\beta)$, so $m_{\beta} \mid q - Q$ and
@@ -216,8 +122,8 @@ algebraic because it is a root of $m_{\alpha} \circ P \in \Z[x]$.
 
 
 Since the solutions for $\alpha$ are cosets $g \in g_{0} + m_{\beta}^{2}\,\Z[x]$,
-$\deg g$ is unbounded above. So the natural question is the smallest
-$\deg g$ for $\alpha$; we do not answer that question, but we provide the
+$\deg g$ is unbounded above. So the natural question is what is the
+smallest $\deg g$ for $\alpha$; we do not answer that question, but we provide the
 following lower bound.
 
 \begin{prop}\label{Pdeg}
@@ -313,23 +219,23 @@ Each line below is a closed identity, checkable by expansion.
   integers is not monogenic. Here $2$ is a common index divisor
   \cite{dedekind1878}. With $u = 21x - 125$, $v = -7x^{2} + 44x - 3$,
   $\rho = 1006$, $f(0) = -8$, $M = -8048$,
-  \[
-    F = 65158925824x^{3} + 8096288x^{2} - 2012x + 1, \qquad
-    W = -194310912x^{3} + 426544x^{2} + 358x,
-  \]
+  \begin{align*}
+    F &= 65158925824x^{3} + 8096288x^{2} - 2012x + 1, \\
+    W &= -194310912x^{3} + 426544x^{2} + 358x,
+  \end{align*}
   \[
     \begin{aligned}
-      g = {}& 101288722414414331904x^{6} - 209759614012620800x^{5} \\
-            & {} - 217370176548864x^{4} - 14767629312x^{3}
-                 + 2350016x^{2} - 10912x .
+      g = {}& 101288722414414331904x^{6} \\
+            & {} - 209759614012620800x^{5} - 217370176548864x^{4} \\
+            & {} - 14767629312x^{3} + 2350016x^{2} - 10912x .
     \end{aligned}
   \]
 \end{example}
 
-\section{Computerization}\label{Sformal}
+\paperSection{Computerization}\label{Sformal}
 
 The construction of $g$ was provided by AI. However, the crucial step that
-allowed the agent to provide answers was my proof of Corollary \ref{C3}. Once I
+allowed the agent to provide answers was my proof of Corollary~\ref{C3}. Once I
 recast the problem as the search for an irreducible polynomial $F$ satisfying
 the hypotheses of Petrov's theorem, the agent found $g$ for a general linear
 polynomial (which one can do by hand), then for a general quadratic, then for a
@@ -338,62 +244,12 @@ Previously, all agents I tried failed to construct $g$ for $x^{3}-x-1$.
 An agent later found Petrov's theorem on MathOverflow after I insisted it
 should do a deep literature search, including all the classical literature.
 The development above has been formalized in Lean~4 \cite{lean4} against
-Mathlib \cite{mathlib}, in about $1{,}700$ lines \cite{repo}. An online
-calculator is provided for the reader to verify the construction \cite{app}. It
+Mathlib \cite{mathlib}, in about $1{,}700$ lines\ifanonymous\ (repository
+withheld for double-blind review)\else\ \cite{repo}\fi. An online
+calculator\ifanonymous\ (withheld for double-blind review)\else\ \cite{app}\fi\ is
+provided for the reader to verify the construction. It
 runs the construction in the browser and, if $\alpha$ is real, generates a
 Desmos plot that allows the reader to check visually that it is a critical
 value. The implemented program does have a virtue that Petrov's construction
 doesn't have. Because it uses the reduced resultant, the coefficients come out
 as small as possible.
-
-\begin{thebibliography}{Acu26b}
-
-\bibitem[Ded78]{dedekind1878}
-Richard Dedekind.
-\newblock \"{U}ber den Zusammenhang zwischen der Theorie der Ideale und der
-  Theorie der h\"{o}heren Kongruenzen.
-\newblock \emph{Abhandlungen der K\"{o}niglichen Gesellschaft der
-  Wissenschaften zu G\"{o}ttingen}, 1878.
-
-\bibitem[SVW17]{svw2017}
-Albert Schwarz, Vadim Vologodsky, and Johannes Walcher.
-\newblock \emph{Integrality of Framing and Geometric Origin of 2-functions}.
-\newblock \url{https://arxiv.org/abs/1702.07135}, 2017.
-
-\bibitem[The20]{mathlib}
-The mathlib Community.
-\newblock The {L}ean Mathematical Library.
-\newblock In \emph{Certified Programs and Proofs (CPP 2020)}. ACM, 2020.
-
-\bibitem[MU21]{lean4}
-Leonardo de Moura and Sebastian Ullrich.
-\newblock The {L}ean 4 Theorem Prover and Programming Language.
-\newblock In \emph{Automated Deduction -- CADE 28}, Lecture Notes in Computer
-  Science. Springer, 2021.
-
-\bibitem[Pet21]{petrov2021}
-Fedor Petrov.
-\newblock Answer to ``When $p(x)^{2} \mid f(g(x))$?''.
-\newblock \url{https://mathoverflow.net/q/397800}, 2021.
-
-\bibitem[Acu26a]{app}
-RJ Acu\~{n}a.
-\newblock \emph{Critical values of integer polynomials: an online calculator}.
-\newblock \url{https://rjacuna.github.io/CriticalValues/}, 2026.
-
-\bibitem[Acu26b]{repo}
-RJ Acu\~{n}a.
-\newblock \emph{{CriticalValues}: paper, {L}ean~4 formalization and calculator}.
-\newblock \url{https://github.com/rjacuna/CriticalValues}, 2026.
-
-\end{thebibliography}
-
-\begin{center}
-  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
-    \includegraphics[width=0.2\textwidth]{qr-repo.png} &
-    \includegraphics[width=0.2\textwidth]{qr-site.png} \\[4pt]
-    \small the repository & \small the calculator
-  \end{tabular}
-\end{center}
-
-\end{document}

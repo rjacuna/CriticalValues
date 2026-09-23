@@ -1,0 +1,150 @@
+% arXiv version of critical-values.tex.
+%
+% arXiv processes submissions with LaTeX/pdfLaTeX and does not run XeTeX, so
+% this file replaces the fontspec/unicode-math setup of the original with a
+% pdfLaTeX one and carries no system fonts. Palatino text with Euler math keeps
+% the original's colour; the body below is otherwise identical.
+%
+% The bibliography is inlined as thebibliography rather than left to
+% biblatex+biber, so no .bbl has to be shipped or version-matched.
+%
+% Build: pdflatex critical-values-arxiv (twice, for the cross-references).
+\documentclass[10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newpxtext}    % Palatino-like text, in place of Miller Display
+\usepackage{amsmath}
+\usepackage{newpxmath}    % Palatino-matched italic math
+% Not eulervm: the original loads it but unicode-math overrides it, so the
+% XeLaTeX build actually sets math in Latin Modern Math -- italic letters.
+% Euler here would set them upright and look nothing like the original.
+
+\usepackage{geometry}
+\geometry{letterpaper, margin=1in}
+\renewcommand{\baselinestretch}{1.2}
+
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+  pdfauthor={RJ Acu\~na},
+  pdftitle={Every Algebraic Number is a Critical Value of an Integer Polynomial},
+  pdflang=en-US,
+  colorlinks=true,
+  urlcolor = blue,
+  linkcolor = blue,
+  citecolor = blue}
+
+\newcommand\Z{\mathbb{Z}}
+\newcommand\Q{\mathbb{Q}}
+
+\usepackage{graphicx}
+\usepackage[normalem]{ulem}
+\usepackage[makeroom]{cancel}
+
+% newpxmath defines \openbox and so does amsthm; let the latter win.
+\let\openbox\relax
+\usepackage{amsthm}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem*{theorem*}{Theorem}
+\newtheorem*{ptheorem}{Petrov's Theorem}
+\newtheorem{cor}{Corollary}
+\newtheorem{prop}{Proposition}
+\theoremstyle{remark}
+\newtheorem{example}{Example}
+\theoremstyle{plain}
+
+% Proofs open with a wavy-underlined marker and close with a black box.
+\newenvironment{pf}{%
+  \par\addvspace{\medskipamount}\noindent\uwave{pf.}\ \ignorespaces}{%
+  \unskip\nobreak\hfill$\blacksquare$\par\addvspace{\medskipamount}}
+
+\usepackage{microtype}
+\microtypesetup{protrusion=false}
+\usepackage{nopageno}
+\usepackage{ragged2e}
+
+
+% Shared-body hooks (see body.tex).
+\newif\ifanonymous
+\anonymousfalse
+\newcommand\paperSection[1]{\section{#1}}
+\newcommand\secref[1]{\S\ref{#1}}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textsc Every Algebraic Number is a
+    Critical Value of an Integer Polynomial}
+
+  {by RJ Acu\~na}
+\end{center}
+
+\begin{center}
+  \begin{minipage}{0.85\textwidth}
+    \begin{abstract}
+      \noindent
+      \justifying
+      \input{abstract}
+    \end{abstract}
+  \end{minipage}
+\end{center}
+
+\input{body}
+
+\begin{thebibliography}{Acu26b}
+
+\bibitem[Ded78]{dedekind1878}
+Richard Dedekind.
+\newblock \"{U}ber den Zusammenhang zwischen der Theorie der Ideale und der
+  Theorie der h\"{o}heren Kongruenzen.
+\newblock \emph{Abhandlungen der K\"{o}niglichen Gesellschaft der
+  Wissenschaften zu G\"{o}ttingen}, 1878.
+
+\bibitem[SVW17]{svw2017}
+Albert Schwarz, Vadim Vologodsky, and Johannes Walcher.
+\newblock \emph{Integrality of Framing and Geometric Origin of 2-functions}.
+\newblock \url{https://arxiv.org/abs/1702.07135}, 2017.
+
+\bibitem[The20]{mathlib}
+The mathlib Community.
+\newblock The {L}ean Mathematical Library.
+\newblock In \emph{Certified Programs and Proofs (CPP 2020)}. ACM, 2020.
+
+\bibitem[MU21]{lean4}
+Leonardo de Moura and Sebastian Ullrich.
+\newblock The {L}ean 4 Theorem Prover and Programming Language.
+\newblock In \emph{Automated Deduction -- CADE 28}, Lecture Notes in Computer
+  Science. Springer, 2021.
+
+\bibitem[Pet21]{petrov2021}
+Fedor Petrov.
+\newblock Answer to ``When $p(x)^{2} \mid f(g(x))$?''.
+\newblock \url{https://mathoverflow.net/q/397800}, 2021.
+
+\bibitem[Acu26a]{app}
+RJ Acu\~{n}a.
+\newblock \emph{Critical values of integer polynomials: an online calculator}.
+\newblock \url{https://rjacuna.github.io/CriticalValues/}, 2026.
+
+\bibitem[Acu26b]{repo}
+RJ Acu\~{n}a.
+\newblock \emph{{CriticalValues}: paper, {L}ean~4 formalization and calculator}.
+\newblock \url{https://github.com/rjacuna/CriticalValues}, 2026.
+
+\end{thebibliography}
+
+\begin{center}
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \includegraphics[width=0.2\textwidth]{qr-repo.png} &
+    \includegraphics[width=0.2\textwidth]{qr-site.png} \\[4pt]
+    \small the repository & \small the calculator
+  \end{tabular}
+\end{center}
+
+\end{document}

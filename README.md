@@ -10,6 +10,26 @@ Precisely (`critical-values-spec.md`, Theorem 1): for every nonconstant
 
 Build with `lake exe cache get && lake build` (Lean 4.32.2).
 
+## Layout
+
+- `paper/`: the paper. `body.tex` and `abstract.tex` are the single source of
+  the text, shared by all three versions; `critical-values.tex` is the XeLaTeX
+  wrapper (Miller Display, biber, `refs.bib`, the two QR codes) and
+  `critical-values.pdf` its current build.
+- `arxiv/`: the arXiv wrapper `critical-values-arxiv.tex` (pdfLaTeX, inline
+  bibliography) and `arxiv-abstract.txt`. `make arxiv` copies the shared
+  sources in, builds the PDF, and packs the self-contained tarball.
+- `AMM/`: the American Mathematical Monthly wrapper `critical-values-AMM.tex`
+  on the Monthly's `maa-monthly.sty` with `vancouver.bst`, and the cover
+  letter. `make amm` copies the shared sources in and runs `build.sh`, which
+  fills `manuscript_author/` and `manuscript_anonymous/`, each a
+  self-contained copy (wrapper with the anonymity switch set, body, abstract,
+  bibliography, style files) with its PDF, and builds the cover letter.
+  `portal.txt` is what the submission form asks for.
+- `Makefile`: `make paper`, `make arxiv`, `make amm`, or `make all`.
+- `CriticalValues/`: the Lean formalization, described below.
+- `haskell/`: the calculator and the web page.
+
 ## Status
 
 | spec | statement | here | status |
