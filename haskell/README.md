@@ -116,3 +116,15 @@ Nothing else in the spec is affected — §8.5 is a remark that the construction
 goes through, and it does; only the constant is wrong. Every other test vector
 (§8.1–§8.4) reproduces exactly, including §8.4's parenthetical that the
 construction gives `M = 23` and a sextic for `X³ − X − 1`.
+
+## Shared FLINT package
+
+FLINT now comes from the sibling [flintell](https://github.com/rjacuna/flintell)
+repository at `../../flintell`, targeting FLINT 3.6.0. For a fresh checkout,
+clone it beside CriticalValues with
+`git clone https://github.com/rjacuna/flintell.git ../../flintell` from this
+directory. From here, run `../../flintell/scripts/build-deps.sh native`, then
+`../../flintell/scripts/configure-cabal.sh .` before `cabal build all`.
+The benchmark keeps its Flint2 imports; Cabal resolves them to flintell's
+maintained fork. The browser build delegates to flintell's `wasm-flint` and
+copies the generated module into `web/`.

@@ -9,3 +9,7 @@ wasm/*.wasm
 wasm/flint.mjs
 wasm/crit.js
 __pycache__/
+
+# Machine-specific shared FLINT prefix
+cabal.project.local
+wasm/index.mjs

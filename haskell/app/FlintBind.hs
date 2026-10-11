@@ -2,10 +2,8 @@
 
 -- | Factoring via FLINT, through the Hackage @Flint2@ bindings.
 --
--- @Flint2@ wraps FLINT in Haskell types (@FmpzPoly@, @FmpzPolyFactor@) rather
--- than raw @ccall@s, and is maintained, so it is the right way to reach FLINT
--- from native Haskell. It does not build against FLINT 3.4 unpatched — see
--- @flint2-fork/@ for the five struct incompatibilities and the patch.
+-- Uses the Flint2 fork maintained in ../../flintell/vendor/Flint2, built
+-- against the same FLINT version as the browser factoriser.
 --
 -- The boundary here is still a string, because FLINT's own @fmpz_poly_get_str@
 -- and @fmpz_poly_set_str@ are the cheapest exact transport and the cost is

@@ -224,3 +224,10 @@ could not, since `Setup` is `noncomputable` in Lean, for the two reasons in
 * [miso on Hackage](https://hackage.haskell.org/package/miso)
 * [ghc-wasm-miso-examples](https://github.com/haskell-wasm/ghc-wasm-miso-examples)
 * [Improving Haskell's big numbers support (ghc-bignum)](https://iohk.io/en/blog/posts/2020/07/28/improving-haskells-big-numbers-support/)
+
+## Shared dependency build
+
+The current FLINT build (3.6.0) is owned by `../../flintell`, including the
+Emscripten bridge. `wasm/build-flint-wasm.sh` delegates to that repository and
+installs the output into `web/`. The earlier timings and toolchain history in
+this document describe the original 3.4 build.

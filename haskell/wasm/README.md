@@ -2,8 +2,8 @@
 
 Two independent WebAssembly modules, talking through JavaScript:
 
-* **`flint.wasm`** — GMP 6.3.0 + MPFR 4.2.2 + FLINT 3.4.0, built with
-  Emscripten. Factors `f`. `build-flint-wasm.sh`. 4.9 MB.
+* **`flint.wasm`** — GMP 6.3.0 + MPFR 4.2.2 + FLINT 3.6.0, built by the shared `../../../flintell` package with
+  Emscripten. Factors `f`. `build-flint-wasm.sh` delegates there and copies the assets to `web/`.
 * **`crit.wasm`** — the construction and all 22 checks, built with GHC's
   `wasm32-wasi` backend as a reactor module. `build-web.sh`.
 
