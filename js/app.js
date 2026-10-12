@@ -1,12 +1,12 @@
 // UI only: parsing the input box, rendering with KaTeX, touch selection,
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
-import { pickBackend, solveWithFlint, warmup } from "./backend.js?v=background-1";
+import { pickBackend, solveWithFlint, warmup, watchEngineStatus } from "./backend.js?v=engine-ready-1";
 import { showGraph, openInDesmos } from "./desmos.js";
 import { url as geogebraUrl } from "./geogebra.js";
 import { toWire, loadParser } from "./parse.js?v=fast-start-1";
 import { examples } from "../examples.js";
-import { afterInitialView } from "../assets.js?v=background-1";
+import { afterInitialView } from "../assets.js?v=engine-ready-1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -271,9 +271,16 @@ addEventListener("DOMContentLoaded", async () => {
   $$("[data-tex]").forEach((el) => tex(el, el.dataset.tex));
   backend = await pickBackend();
   const badge = $("#backend-badge");
-  badge.textContent = backend.name === "wasm" ? "wasm" : "server";
-  badge.className = "ms-auto badge " +
-    (backend.name === "wasm" ? "text-bg-success" : "text-bg-secondary");
+  if (backend.name === "wasm") {
+    watchEngineStatus(status => {
+      const labels = {idle: "engine pending", loading: "engine loading", ready: "wasm ready", error: "engine unavailable"};
+      const colours = {idle: "secondary", loading: "warning", ready: "success", error: "danger"};
+      badge.textContent = labels[status];
+      badge.className = "ms-auto badge text-bg-" + colours[status];
+      badge.title = status === "ready" ? "Both calculation modules are loaded and initialized."
+        : "Verified examples work immediately; custom input needs both calculation modules.";
+    });
+  } else { badge.textContent = "server"; badge.className = "ms-auto badge text-bg-secondary"; }
 
   $("#form").addEventListener("submit", (e) => { e.preventDefault(); compute(); });
   $$(".ex").forEach((b) => b.addEventListener("click", () => {
