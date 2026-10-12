@@ -1,4 +1,4 @@
-import { asset } from "../assets.js";
+import { asset } from "../assets.js?v=background-1";
 
 // The one place that knows how the construction is reached.
 //
@@ -24,13 +24,13 @@ const wasmBackend = {
   name: "wasm",
   _hs: null,
   _loading: null,
-  _load() {
-    if (!this._loading) this._loading = this._instantiate().catch(e => { this._loading = null; throw e; });
+  _load(priority = "auto") {
+    if (!this._loading) this._loading = this._instantiate(priority).catch(e => { this._loading = null; throw e; });
     return this._loading;
   },
-  async _instantiate() {
+  async _instantiate(priority) {
     const { wasiImports } = await import("./wasi-shim.js");
-    const response = await asset("crit.wasm");
+    const response = await asset("crit.wasm", undefined, priority);
     if (!response.ok) throw new Error(`construction download: HTTP ${response.status}`);
     const mod = WebAssembly.compileStreaming && response.headers.get("Content-Type")?.split(";")[0] === "application/wasm"
       ? await WebAssembly.compileStreaming(response)
@@ -62,14 +62,14 @@ const wasmBackend = {
 // irreducible only when f already is.
 const backendDevelopment = () => !location.hostname.endsWith(".github.io");
 let flintLoading = null;
-export function loadFlint() {
-  if (!flintLoading) flintLoading = instantiateFlint();
+export function loadFlint(priority = "auto") {
+  if (!flintLoading) flintLoading = instantiateFlint(priority);
   return flintLoading;
 }
-async function instantiateFlint() {
+async function instantiateFlint(priority) {
   if (new URLSearchParams(location.search).has("dev")) return null;
   try {
-    const [module, response] = await Promise.all([import("../flint.mjs"), asset("flint.wasm")]);
+    const [module, response] = await Promise.all([import("../flint.mjs"), asset("flint.wasm", undefined, priority)]);
     if (response.status === 404 && backendDevelopment()) return null;
     if (!response.ok) throw new Error(`FLINT download: HTTP ${response.status}`);
     const compiled = WebAssembly.compileStreaming && response.headers.get("Content-Type")?.split(";")[0] === "application/wasm"
@@ -135,4 +135,9 @@ export async function solveWithFlint(backend, wire, report = () => {}) {
     for (const s of d.setups || []) s.HIrred = fl.factor(s.H).length === 1;
   }
   return d;
+}
+
+export function warmup(backend) {
+  if (backend.name !== "wasm") return Promise.resolve();
+  return Promise.all([backend._load("low"), loadFlint("low")]);
 }

@@ -3,7 +3,7 @@ const versions = {"crit.wasm": "79f1bdece738ed39a63243d929a7664c30fec1c8a5d885c2
 
 // Content-addressed downloads survive GitHub Pages' short HTTP cache lifetime.
 // CacheStorage is optional: privacy mode/quota failures keep normal fetch working.
-export async function asset(name, fingerprint = versions[name]) {
+export async function asset(name, fingerprint = versions[name], priority = "auto") {
   const url = new URL(name, import.meta.url);
   if (fingerprint) url.searchParams.set("v", fingerprint);
   let cache;
@@ -14,7 +14,19 @@ export async function asset(name, fingerprint = versions[name]) {
       if (hit) return hit;
     } catch { /* storage unavailable */ }
   }
-  const response = await fetch(url);
+  const response = await fetch(url, {priority});
   if (cache && response.ok) cache.put(url.href, response.clone()).catch(() => {});
   return response;
+}
+
+// Call after the initial view is complete. Background transfers begin only
+// after initial scripts/styles/images have loaded and the browser has painted.
+export function afterInitialView(task) {
+  const schedule = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const run = () => Promise.resolve().then(task).catch(() => {});
+    if (globalThis.requestIdleCallback) requestIdleCallback(run, {timeout: 2000});
+    else setTimeout(run, 200);
+  }));
+  if (document.readyState === "complete") schedule();
+  else addEventListener("load", schedule, {once: true});
 }
