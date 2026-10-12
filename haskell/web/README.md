@@ -153,3 +153,25 @@ corrupt the checks along with the answer.
 
 Roots are shown to 7 significant digits. Above degree 4 there is no expression
 by radicals and the panel says so rather than leaving a blank.
+
+
+The five example buttons use verified build-time answers from `examples.js`;
+these are produced by the same `solveWithFlint` path as arbitrary input, with
+all construction checks and FLINT irreducibility checks enabled. No WASM or
+expression parser is downloaded for these examples. After changing the
+construction, regenerate them with Playwright installed and the site served:
+
+```
+CRITICALVALUES_URL=http://localhost:8000 node haskell/wasm/build-examples.cjs
+```
+
+For arbitrary input the two WASM downloads start together. `assets.js` caches
+successful binary responses in CacheStorage under SHA-256 versioned URLs;
+`wasm/asset-manifest.py` updates those keys in both WASM build scripts. Storage
+is optional; the app still works when it is unavailable.
+
+Browser startup/cache regression checks (Playwright, local site running):
+
+```
+node haskell/wasm/browser-startup.test.cjs
+```

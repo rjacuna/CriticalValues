@@ -91,3 +91,17 @@ export function toWire(raw) {
   const body = sexp(node);
   return body.startsWith("(") ? body : `(+ ${body})`;
 }
+
+// Expressions need mathjs; the verified built-in examples do not.
+let parserLoading;
+export function loadParser() {
+  if (globalThis.math) return Promise.resolve();
+  if (!parserLoading) parserLoading = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = new URL("../vendor/math.js", import.meta.url);
+    script.onload = resolve;
+    script.onerror = () => { parserLoading = null; script.remove(); reject(new Error("Could not load the expression parser; please retry.")); };
+    document.head.appendChild(script);
+  });
+  return parserLoading;
+}

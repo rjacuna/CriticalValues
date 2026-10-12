@@ -20,3 +20,5 @@ wasm32-wasi-ghc -O2 -no-hs-main -optl-mexec-model=reactor \
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$OUT/crit.wasm" -o "$OUT/crit.js"
 
 echo "built $OUT/crit.wasm and crit.js"
+
+python3 "$HERE/asset-manifest.py"
