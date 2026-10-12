@@ -157,8 +157,10 @@ by radicals and the panel says so rather than leaving a blank.
 
 The five example buttons use verified build-time answers from `examples.js`;
 these are produced by the same `solveWithFlint` path as arbitrary input, with
-all construction checks and FLINT irreducibility checks enabled. No WASM or
-expression parser is downloaded for these examples. After changing the
+all construction checks and FLINT irreducibility checks enabled. These examples display before WASM or
+the expression parser downloads. Once the initial view has loaded and painted,
+an idle callback warms both engines at low network priority, then the parser;
+actions share the in-progress downloads. After changing the
 construction, regenerate them with Playwright installed and the site served:
 
 ```

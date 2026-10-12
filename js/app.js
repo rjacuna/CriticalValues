@@ -1,11 +1,12 @@
 // UI only: parsing the input box, rendering with KaTeX, touch selection,
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
-import { pickBackend, solveWithFlint } from "./backend.js?v=fast-start-1";
+import { pickBackend, solveWithFlint, warmup } from "./backend.js?v=background-1";
 import { showGraph, openInDesmos } from "./desmos.js";
 import { url as geogebraUrl } from "./geogebra.js";
 import { toWire, loadParser } from "./parse.js?v=fast-start-1";
 import { examples } from "../examples.js";
+import { afterInitialView } from "../assets.js?v=background-1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -298,5 +299,6 @@ addEventListener("DOMContentLoaded", async () => {
       flash(b, "Copied");
     });
   }
-  compute();
+  await compute();
+  afterInitialView(async () => { await warmup(backend); await loadParser(); });
 });
