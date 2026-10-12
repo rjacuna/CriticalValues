@@ -4,7 +4,7 @@
 import { pickBackend, solveWithFlint, warmup, watchEngineStatus } from "./backend.js?v=engine-ready-1";
 import { showGraph, openInDesmos } from "./desmos.js";
 import { url as geogebraUrl } from "./geogebra.js";
-import { toWire, loadParser } from "./parse.js?v=fast-start-1";
+import { toWire } from "./parse.js?v=bundled-parser-1";
 import { examples } from "../examples.js";
 import { afterInitialView } from "../assets.js?v=engine-ready-1";
 
@@ -252,8 +252,6 @@ async function compute() {
   busy(true, backend.name === "wasm" ? "running in the browser…" : "computing…");
   try {
     if (!cached) {
-      busy(true, "loading the expression parser…");
-      await loadParser();
       wire = toWire(raw);
     }
     const d = cached ? structuredClone(cached) : await solveWithFlint(backend, wire, text => busy(true, text));
@@ -307,5 +305,5 @@ addEventListener("DOMContentLoaded", async () => {
     });
   }
   await compute();
-  afterInitialView(async () => { await warmup(backend); await loadParser(); });
+  afterInitialView(() => warmup(backend));
 });

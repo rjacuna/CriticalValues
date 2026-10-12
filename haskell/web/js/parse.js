@@ -1,107 +1,93 @@
-// Turning what the user typed into something the backend can evaluate.
-//
-// mathjs *parses*; it does not do the algebra. Its parser is excellent — 13 ms
-// whether the input is (x+1)^2 or (x+1)^8 — but `rationalize`, which would
-// expand the product, normalises by rewriting to a fixed point and rescans the
-// whole tree against the whole rule set after every rewrite. Measured:
-//
-//     (x+1)^2   23 ms      (x+1)^4      75 ms
-//     (x+1)^3   25 ms      (x+1)^5   52,981 ms
-//
-// The same expansion in the Haskell (src/Expr.hs) takes 0.26 ms, and does
-// (x+1)^200 in 6.3 ms. So the AST is serialised to an s-expression and expanded
-// there, with the exact arithmetic the rest of the project already uses. No
-// mathematics happens in this file.
-const M = () => {
-  const m = globalThis.math;
-  if (!m) throw new Error("mathjs not loaded (vendor/math.js)");
-  return m;
-};
-
-const OPS = {
-  add: "+", subtract: "-", multiply: "*", divide: "/",
-  pow: "^", unaryMinus: "-", unaryPlus: "+",
-};
-
-function sexp(node) {
-  switch (node.type) {
-    case "ConstantNode": {
-      const v = node.value;
-      if (typeof v === "number") {
-        if (!Number.isInteger(v)) {
-          // 0.5 becomes (/ 1 2) rather than a float: the backend is exact
-          const f = M().fraction(v);
-          return `(/ ${f.s < 0 ? "-" : ""}${f.n} ${f.d})`;
-        }
-        return String(v);
-      }
-      if (v && v.n !== undefined && v.d !== undefined)
-        return `(/ ${v.s < 0 ? "-" : ""}${v.n} ${v.d})`;
-      return String(v);
-    }
-    case "SymbolNode":
-      return node.name;
-    case "ParenthesisNode":
-      return sexp(node.content);
-    case "OperatorNode": {
-      const op = OPS[node.fn];
-      if (!op) throw new Error(`unsupported operator ${node.fn}`);
-      return `(${op} ${node.args.map(sexp).join(" ")})`;
-    }
-    default:
-      throw new Error(`unsupported ${node.type.replace("Node", "").toLowerCase()}`);
-  }
-}
-
-const isIntStr = (s) => /^[+-]?\d+$/.test(s);
-
-/**
- * @returns {string} either a coefficient list "c0,c1,..." or an s-expression,
- *   both of which the backend accepts. An s-expression always starts with "(",
- *   which is how the two are told apart.
- */
+// Parse polynomial syntax into the Haskell engine's s-expressions. Expansion,
+// division and all polynomial arithmetic remain in Haskell. Numeric literals
+// stay strings, so large integers and decimal fractions never pass through Number.
 export function toWire(raw) {
-  const s = String(raw).trim();
-  if (!s) throw new Error("enter a polynomial");
-
-  // a bare coefficient list stays a coefficient list
-  if (!/[a-zA-Z]/.test(s)) {
-    const cs = s.split(",").map((t) => t.trim()).filter(Boolean);
-    if (!cs.every(isIntStr)) throw new Error("coefficients must be integers");
-    return cs.join(",");
+  const source = String(raw).trim();
+  if (!source) throw new Error("enter a polynomial");
+  if (source.includes(",") || /^[+-]?\d+$/.test(source)) {
+    const coefficients = source.split(",").map(s => s.trim());
+    if (!coefficients.every(s => /^[+-]?\d+$/.test(s)))
+      throw new Error("coefficients must be integers");
+    return coefficients.join(",");
   }
-
-  let node;
-  try {
-    node = M().parse(s);
-  } catch (e) {
-    throw new Error(`cannot read that expression (${e.message || e})`);
+  const tokens = [];
+  const pattern = /\s+|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|[a-zA-Z_][a-zA-Z_0-9]*|[()+*/^−-]/gy;
+  let offset = 0;
+  while (offset < source.length) {
+    pattern.lastIndex = offset;
+    const match = pattern.exec(source);
+    if (!match) throw new Error(`cannot read that expression at character ${offset + 1}`);
+    offset = pattern.lastIndex;
+    if (!/^\s/.test(match[0])) tokens.push(match[0].replace("−", "-"));
   }
-
-  const vars = new Set();
-  node.traverse((n) => { if (n.type === "SymbolNode") vars.add(n.name); });
-  if (vars.size > 1) throw new Error(`one variable only, saw ${[...vars].join(", ")}`);
-  const v = [...vars][0];
-  if (v && v !== "x") {
-    // let the user write t or y; the backend only knows x
-    node = node.transform((n) =>
-      n.type === "SymbolNode" && n.name === v ? new (M().SymbolNode)("x") : n);
+  let position = 0;
+  const variables = new Set();
+  const peek = () => tokens[position];
+  const take = () => tokens[position++];
+  const binary = (op, left, right) => `(${op} ${left} ${right})`;
+  const number = token => {
+    const [mantissa, exponent = "0"] = token.toLowerCase().split("e");
+    const [whole, fraction = ""] = mantissa.split(".");
+    const shift = Number(exponent) - fraction.length;
+    // Bound literal size before allocating strings. This is unrelated to the
+    // algebraic degree, which the engine handles independently.
+    if (!Number.isSafeInteger(shift) || Math.abs(shift) > 100000)
+      throw new Error("numeric literal exponent is too large");
+    const digits = ((whole || "0") + fraction).replace(/^0+(?=\d)/, "");
+    if (shift >= 0) return digits + "0".repeat(shift);
+    return `(/ ${digits} 1${"0".repeat(-shift)})`;
+  };
+  function primary() {
+    const token = take();
+    if (token === "(") {
+      const value = sum();
+      if (take() !== ")") throw new Error("cannot read that expression: missing )");
+      return value;
+    }
+    if (token && /^(?:\d|\.)/.test(token)) return number(token);
+    if (token && /^[a-zA-Z_]/.test(token)) { variables.add(token); return "x"; }
+    throw new Error(`cannot read that expression: expected a number, variable or ( at ${token || "end of input"}`);
   }
-  // always parenthesised, so the backend can tell it from a coefficient list
-  const body = sexp(node);
+  function power() {
+    const left = primary();
+    return peek() === "^" ? (take(), binary("^", left, unary())) : left;
+  }
+  function unary() {
+    if (peek() === "+") { take(); return unary(); }
+    if (peek() === "-") { take(); return `(- ${unary()})`; }
+    return power();
+  }
+  const implicit = token => token && /^(?:[a-zA-Z_(]|\d|\.)/.test(token);
+  // Implicit multiplication binds more tightly than explicit multiplication
+  // and division, matching mathjs: x/2x means x/(2*x).
+  function juxtaposition() {
+    let left = unary();
+    // As in mathjs, a literal fraction followed by juxtaposition is a
+    // coefficient: 2/3x means (2/3)*x, while x/2x means x/(2*x).
+    if (/^(?:\d+|\(\/ \d+ \d+\))$/.test(left) && peek() === "/"
+        && /^(?:\d|\.)/.test(tokens[position + 1] || "")
+        && implicit(tokens[position + 2]) && tokens[position + 2] !== "^") {
+      take(); left = binary("/", left, primary());
+    }
+    while (implicit(peek())) left = binary("*", left, unary());
+    return left;
+  }
+  function product() {
+    let left = juxtaposition();
+    while (peek() === "*" || peek() === "/") {
+      const op = take(); left = binary(op, left, juxtaposition());
+    }
+    return left;
+  }
+  function sum() {
+    let left = product();
+    while (peek() === "+" || peek() === "-") {
+      const op = take(); left = binary(op, left, product());
+    }
+    return left;
+  }
+  const body = sum();
+  if (position !== tokens.length) throw new Error(`cannot read that expression: unexpected ${peek()}`);
+  if (variables.size > 1) throw new Error(`one variable only, saw ${[...variables].join(", ")}`);
   return body.startsWith("(") ? body : `(+ ${body})`;
-}
-
-// Expressions need mathjs; the verified built-in examples do not.
-let parserLoading;
-export function loadParser() {
-  if (globalThis.math) return Promise.resolve();
-  if (!parserLoading) parserLoading = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = new URL("../vendor/math.js", import.meta.url);
-    script.onload = resolve;
-    script.onerror = () => { parserLoading = null; script.remove(); reject(new Error("Could not load the expression parser; please retry.")); };
-    document.head.appendChild(script);
-  });
-  return parserLoading;
 }
