@@ -1,10 +1,11 @@
 // UI only: parsing the input box, rendering with KaTeX, touch selection,
 // clipboard. No mathematics happens in this file — every number shown comes
 // from the compiled Haskell.
-import { pickBackend, loadFlint } from "./backend.js";
+import { pickBackend, solveWithFlint } from "./backend.js?v=fast-start-1";
 import { showGraph, openInDesmos } from "./desmos.js";
 import { url as geogebraUrl } from "./geogebra.js";
-import { toWire } from "./parse.js";
+import { toWire, loadParser } from "./parse.js?v=fast-start-1";
+import { examples } from "../examples.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -239,39 +240,23 @@ const fail = (m) => { const a = $("#alert"); a.textContent = m; a.classList.remo
 
 async function compute() {
   $("#alert").classList.add("d-none");
+  const raw = $("#finput").value;
+  const cached = backend.name === "wasm" && !new URLSearchParams(location.search).has("dev")
+    ? examples[raw.replace(/\s+/g, "")] : null;
   let wire;
-  try { wire = toWire($("#finput").value); }
-  catch (e) { fail(String(e.message || e)); return; }
   $("#fecho").innerHTML = "";
 
   $("#results").classList.add("d-none");
   $("#stickysel").classList.remove("on");
   busy(true, backend.name === "wasm" ? "running in the browser…" : "computing…");
   try {
-    // First pass expands the expression and hands back f's coefficients.
-    let d = await backend.solve(`${wire}|`);
-    if (!d.ok) { fail(d.error || "failed"); return; }
-
-    // Second pass, when FLINT is available: factor f and rebuild, so H really
-    // is irreducible and each factor of a reducible f gets its own g.
-    const fl = await loadFlint();
-    if (fl && d.f && !d.degenerate) {
-      busy(true, "factoring with FLINT…");
-      const factors = fl.factor(d.f).filter((h) => h.length > 1 && h[0] !== "0");
-      if (factors.length) {
-        const d2 = await backend.solve(`${d.f.join(",")}|${factors.map((h) => h.join(",")).join(";")}`);
-        if (d2.ok) d = d2;
-      }
-      // Verify irreducibility of H rather than assuming it. This cannot live in
-      // the 22 checks: crit.wasm is base-only and Kronecker would choke on H's
-      // coefficients, so it is asked of FLINT here. Counting factors is not
-      // arithmetic — FLINT does the work.
-      busy(true, "verifying H is irreducible…");
-      for (const s of d.setups || []) {
-        try { s.HIrred = fl.factor(s.H).length === 1; }
-        catch { s.HIrred = null; }
-      }
+    if (!cached) {
+      busy(true, "loading the expression parser…");
+      await loadParser();
+      wire = toWire(raw);
     }
+    const d = cached ? structuredClone(cached) : await solveWithFlint(backend, wire, text => busy(true, text));
+    if (!d.ok) { fail(d.error || "failed"); return; }
     render(d);
   } catch (e) {
     fail(String(e.message || e));

@@ -1,3 +1,5 @@
+import { asset } from "../assets.js";
+
 // The one place that knows how the construction is reached.
 //
 // Two implementations behind the same call. `server` pipes to a native binary
@@ -21,11 +23,18 @@ const serverBackend = {
 const wasmBackend = {
   name: "wasm",
   _hs: null,
-  async _load() {
-    if (this._hs) return this._hs;
+  _loading: null,
+  _load() {
+    if (!this._loading) this._loading = this._instantiate().catch(e => { this._loading = null; throw e; });
+    return this._loading;
+  },
+  async _instantiate() {
     const { wasiImports } = await import("./wasi-shim.js");
-    const bytes = await (await fetch("./crit.wasm")).arrayBuffer();
-    const mod = await WebAssembly.compile(bytes);
+    const response = await asset("crit.wasm");
+    if (!response.ok) throw new Error(`construction download: HTTP ${response.status}`);
+    const mod = WebAssembly.compileStreaming && response.headers.get("Content-Type")?.split(";")[0] === "application/wasm"
+      ? await WebAssembly.compileStreaming(response)
+      : await WebAssembly.compile(await response.arrayBuffer());
     const { wasi, setMemory } = wasiImports(mod);
     const { default: ghcJsffi } = await import("../crit.js");
     const jsffi = {};
@@ -51,16 +60,29 @@ const wasmBackend = {
 // the split costs nothing. `?dev` skips it — the construction then runs on the
 // squarefree part, which still satisfies both divisibilities but makes H
 // irreducible only when f already is.
-let flint = null;
-export async function loadFlint() {
+const backendDevelopment = () => !location.hostname.endsWith(".github.io");
+let flintLoading = null;
+export function loadFlint() {
+  if (!flintLoading) flintLoading = instantiateFlint();
+  return flintLoading;
+}
+async function instantiateFlint() {
   if (new URLSearchParams(location.search).has("dev")) return null;
-  if (flint !== null) return flint || null;
   try {
-    const head = await fetch("./flint.wasm", { method: "HEAD" });
-    if (!head.ok) { flint = false; return null; }
-    const { default: createFlintModule } = await import("../flint.mjs");
-    const m = await createFlintModule();
-    flint = {
+    const [module, response] = await Promise.all([import("../flint.mjs"), asset("flint.wasm")]);
+    if (response.status === 404 && backendDevelopment()) return null;
+    if (!response.ok) throw new Error(`FLINT download: HTTP ${response.status}`);
+    const compiled = WebAssembly.compileStreaming && response.headers.get("Content-Type")?.split(";")[0] === "application/wasm"
+      ? await WebAssembly.compileStreaming(response)
+      : await WebAssembly.compile(await response.arrayBuffer());
+    // This Emscripten build accepts instantiateWasm, but strips wasmBinary from
+    // its incoming API. Supplying wasmBinary would silently download it twice.
+    const m = await module.default({ instantiateWasm(imports, receive) {
+      const instance = new WebAssembly.Instance(compiled, imports);
+      receive(instance);
+      return instance.exports;
+    } });
+    return {
       // coefficients (decimal strings, low to high) -> irreducible factors
       factor(coeffs) {
         const inPtr = m.stringToNewUTF8(`${coeffs.length}  ${coeffs.join(" ")}`);
@@ -78,8 +100,7 @@ export async function loadFlint() {
         return out;
       },
     };
-    return flint;
-  } catch { flint = false; return null; }
+  } catch (e) { flintLoading = null; throw e; }
 }
 
 // Prefer wasm when the module is present; fall back to the dev server.
@@ -87,10 +108,31 @@ export async function loadFlint() {
 export async function pickBackend() {
   const forced = new URLSearchParams(location.search).get("backend");
   if (forced === "server") return serverBackend;
-  if (forced === "wasm") return wasmBackend;
+  if (forced === "wasm" || (!forced && location.hostname.endsWith(".github.io"))) return wasmBackend;
   try {
     const head = await fetch("./crit.wasm", { method: "HEAD" });
     if (head.ok) return wasmBackend;
   } catch { /* not built yet */ }
   return serverBackend;
+}
+
+// Shared by the UI and the build-time example generator. Start both downloads
+// together; never publish a result without the same factorisation checks.
+export async function solveWithFlint(backend, wire, report = () => {}) {
+  report("loading the calculation engine…");
+  const [first, fl] = await Promise.all([backend.solve(`${wire}|`), loadFlint()]);
+  let d = first;
+  if (!d.ok) return d;
+  if (fl && d.f && !d.degenerate) {
+    report("factoring with FLINT…");
+    const factors = fl.factor(d.f).filter(h => h.length > 1 && h[0] !== "0");
+    if (factors.length) {
+      const next = await backend.solve(`${d.f.join(",")}|${factors.map(h => h.join(",")).join(";")}`);
+      if (!next.ok) throw new Error(next.error || "factor reconstruction failed");
+      d = next;
+    }
+    report("verifying H is irreducible…");
+    for (const s of d.setups || []) s.HIrred = fl.factor(s.H).length === 1;
+  }
+  return d;
 }
