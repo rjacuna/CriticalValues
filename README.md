@@ -71,24 +71,17 @@ expression comes from. `(x³+x−2)(x+2)` factors as `(x−1)(x²+x+2)(x+2)`:
 Previously all four got the Ferrari quartic formula. The same change means a
 degree-6 `f` splitting into two cubics gets Cardano twice rather than nothing.
 
-## Input: mathjs parses, Haskell expands
+## Input: bundled parser, Haskell expansion
 
-`(x^3 + x - 2)*(x + 2)` is accepted, and so is `(x+1)^5`. mathjs does the
-parsing — that is what a library is for, and its parser is fast and correct at
-13 ms regardless of exponent. It does **not** do the algebra.
+`(x^3 + x - 2)*(x + 2)` and `(x+1)^5` are accepted. A small parser
+ships with the app, so editing a coefficient never needs a separate parser
+download. It supports parentheses, powers, unary signs, implicit products,
+constant division, decimal/scientific literals and one variable (renamed to
+`x`). Integer and decimal literals remain exact strings, including integers
+larger than JavaScript's safe integer range. Comma-separated integer
+coefficient lists still bypass expression parsing.
 
-Its `rationalize` would expand the product, but it normalises by rewriting to a
-fixed point, rescanning the whole tree against the whole rule set after every
-rewrite:
-
-| | `^2` | `^3` | `^4` | `^5` |
-|---|---|---|---|---|
-| `math.rationalize((x+1)^n)` | 23 ms | 25 ms | 75 ms | **52,981 ms** |
-
-That is a 700× jump for one degree, at 40 MB of heap — CPU-bound in rule
-matching, not a structural blow-up, and not an infinite loop: it does finish.
-
-The AST is therefore serialised to an s-expression and expanded by `src/Expr.hs`
+The parser only serialises syntax to an s-expression. Expansion happens in `src/Expr.hs`
 using the exact arithmetic the project already has:
 
 | | `(x+1)^5` | `(x+1)^200` | `(2x+1)^100·(x³−2)^40` |
@@ -158,8 +151,8 @@ by radicals and the panel says so rather than leaving a blank.
 The five example buttons use verified build-time answers from `examples.js`;
 these are produced by the same `solveWithFlint` path as arbitrary input, with
 all construction checks and FLINT irreducibility checks enabled. These examples display before WASM or
-the expression parser downloads. Once the initial view has loaded and painted,
-an idle callback warms both engines at high network priority, then the parser;
+any additional calculation assets download. Once the initial view has loaded and painted,
+an idle callback warms both engines at high network priority, with the small expression parser already bundled;
 actions share the in-progress downloads. After changing the
 construction, regenerate them with Playwright installed and the site served:
 
