@@ -1,4 +1,4 @@
-import { asset } from "../assets.js?v=background-1";
+import { asset } from "../assets.js?v=engine-ready-1";
 
 // The one place that knows how the construction is reached.
 //
@@ -29,8 +29,10 @@ const wasmBackend = {
     return this._loading;
   },
   async _instantiate(priority) {
-    const { wasiImports } = await import("./wasi-shim.js");
-    const response = await asset("crit.wasm", undefined, priority);
+    const [shim, response] = await Promise.all([
+      import("./wasi-shim.js"), asset("crit.wasm", undefined, priority),
+    ]);
+    const { wasiImports } = shim;
     if (!response.ok) throw new Error(`construction download: HTTP ${response.status}`);
     const mod = WebAssembly.compileStreaming && response.headers.get("Content-Type")?.split(";")[0] === "application/wasm"
       ? await WebAssembly.compileStreaming(response)
@@ -120,8 +122,13 @@ export async function pickBackend() {
 // together; never publish a result without the same factorisation checks.
 export async function solveWithFlint(backend, wire, report = () => {}) {
   report("loading the calculation engine…");
-  const [first, fl] = await Promise.all([backend.solve(`${wire}|`), loadFlint()]);
-  let d = first;
+  const [, fl] = backend.name === "wasm"
+    ? await warmup(backend)
+    : await Promise.all([null, loadFlint("high")]);
+  report("computing…");
+  // Let the status paint before entering the synchronous Haskell calculation.
+  await new Promise(resolve => setTimeout(resolve, 0));
+  let d = await backend.solve(`${wire}|`);
   if (!d.ok) return d;
   if (fl && d.f && !d.degenerate) {
     report("factoring with FLINT…");
@@ -137,7 +144,27 @@ export async function solveWithFlint(backend, wire, report = () => {}) {
   return d;
 }
 
+let warmupPromise = null;
+let engineStatus = "idle";
+const engineListeners = new Set();
+export function watchEngineStatus(listener) {
+  engineListeners.add(listener);
+  listener(engineStatus);
+  return () => engineListeners.delete(listener);
+}
+function setEngineStatus(status) {
+  engineStatus = status;
+  for (const listener of engineListeners) listener(status);
+}
 export function warmup(backend) {
   if (backend.name !== "wasm") return Promise.resolve();
-  return Promise.all([backend._load("low"), loadFlint("low")]);
+  if (!warmupPromise) {
+    setEngineStatus("loading");
+    // The initial view has already finished. There is no reason to give these
+    // large transfers low priority while the visitor explores the examples.
+    warmupPromise = Promise.all([backend._load("high"), loadFlint("high")])
+      .then(modules => { setEngineStatus("ready"); return modules; })
+      .catch(e => { warmupPromise = null; setEngineStatus("error"); throw e; });
+  }
+  return warmupPromise;
 }

@@ -159,7 +159,7 @@ The five example buttons use verified build-time answers from `examples.js`;
 these are produced by the same `solveWithFlint` path as arbitrary input, with
 all construction checks and FLINT irreducibility checks enabled. These examples display before WASM or
 the expression parser downloads. Once the initial view has loaded and painted,
-an idle callback warms both engines at low network priority, then the parser;
+an idle callback warms both engines at high network priority, then the parser;
 actions share the in-progress downloads. After changing the
 construction, regenerate them with Playwright installed and the site served:
 
@@ -177,3 +177,7 @@ Browser startup/cache regression checks (Playwright, local site running):
 ```
 node haskell/wasm/browser-startup.test.cjs
 ```
+
+The engine badge becomes green only after both WASM modules initialize.
+The loading message covers only downloads/initialization; synchronous algebra
+is labelled computing.

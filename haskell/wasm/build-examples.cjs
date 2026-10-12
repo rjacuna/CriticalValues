@@ -10,7 +10,7 @@ const path = require('node:path');
     const page = await browser.newPage();
     await page.goto(process.env.CRITICALVALUES_URL || 'http://localhost:8000/', {waitUntil: 'domcontentloaded'});
     const examples = await page.evaluate(async () => {
-      const {pickBackend, solveWithFlint} = await import('./js/backend.js?v=background-1');
+      const {pickBackend, solveWithFlint} = await import('./js/backend.js?v=engine-ready-1');
       const {loadParser, toWire} = await import('./js/parse.js?v=fast-start-1');
       await loadParser();
       const backend = await pickBackend();

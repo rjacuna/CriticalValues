@@ -20,27 +20,32 @@ const {chromium} = require('playwright');
   console.log('CriticalValues cold examples ready',Date.now()-start,'ms');
   for(const button of await p.locator('.ex').all()) {await button.click();await p.locator('#results').waitFor({state:'visible'});assert.equal(await p.locator('#alert').isVisible(),false);}
   assert.equal(requests.filter(r=>r.url.includes('.wasm')).length,0);assert.equal(requests.filter(r=>r.url.includes('vendor/math.js')).length,0);
+  assert.equal(await p.locator('#backend-badge').innerText(), 'engine pending');
+  assert.equal(await p.locator('#backend-badge').evaluate(e => e.classList.contains('text-bg-success')), false);
   await p.unroute('**/*.wasm*');
   await p.route('**/*.wasm*',async r=>{await new Promise(resolve=>setTimeout(resolve,700));await r.continue()});
   await p.waitForFunction(() => window.__warmups.length > 0);
   await p.evaluate(() => window.__warmups.splice(0).forEach(run => run()));
+  assert.equal(await p.locator("#backend-badge").innerText(), "engine loading");
   await p.waitForFunction(async () => {
     const c = await caches.open('criticalvalues-assets-v1');
     return (await c.keys()).filter(r => r.url.includes('.wasm')).length === 2;
   });
+  await p.waitForFunction(() => document.querySelector("#backend-badge").textContent === "wasm ready");
+  assert.equal(await p.locator("#backend-badge").evaluate(e => e.classList.contains("text-bg-success")), true);
   const warming = await p.evaluate(() => window.__fetches.filter(r => r.url.includes('.wasm')));
   assert.equal(warming.length, 2);
-  assert.ok(warming.every(r => r.priority === 'low'));
+  assert.ok(warming.every(r => r.priority === 'high'));
   await p.locator('#finput').fill('(x+1)*(x^2+1)');await p.locator('#go').click();await p.locator('#results').waitFor({state:'visible',timeout:30000});
   const binaryRequests=requests.filter(r=>r.url.includes('.wasm')&&r.method==='GET');
   assert.equal(binaryRequests.length,2);assert.ok(Math.abs(binaryRequests[0].at-binaryRequests[1].at)<500,'WASM downloads must overlap');
-  const verified=await p.evaluate(async()=>{const {pickBackend,solveWithFlint}=await import('./js/backend.js?v=background-1');return solveWithFlint(await pickBackend(),'1,1,1,1')});
+  const verified=await p.evaluate(async()=>{const {pickBackend,solveWithFlint}=await import('./js/backend.js?v=engine-ready-1');return solveWithFlint(await pickBackend(),'1,1,1,1')});
   assert.equal(verified.setups.length,2);assert.ok(verified.setups.every(s=>s.HIrred&&s.checks.every(c=>c.ok)));
   await p.waitForFunction(async()=>{const c=await caches.open('criticalvalues-assets-v1');return (await c.keys()).filter(r=>r.url.includes('.wasm')).length===2});
   await p.unroute('**/*.wasm*');await p.route('**/*.wasm*',r=>r.abort());requests.length=0;
   await p.reload();await p.locator('#results').waitFor({state:'visible'});await p.locator('#finput').fill('(x+1)*(x^2+1)');await p.locator('#go').click();await p.locator('#results').waitFor({state:'visible'});
   assert.equal(requests.filter(r=>r.url.includes('.wasm')).length,0);assert.equal(await p.locator('#alert').isVisible(),false);
-  assert.deepEqual(errors,[]);console.log('CriticalValues: examples without WASM/parser, automatic low-priority warmup, arbitrary solve, factor checks, persistent cache PASS');await context.close();
+  assert.deepEqual(errors,[]);console.log('CriticalValues: examples without WASM/parser, automatic high-priority warmup, arbitrary solve, factor checks, persistent cache PASS');await context.close();
 
  } finally { await b.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
